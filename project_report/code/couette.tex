@@ -1,0 +1,139 @@
+\begin{mdframed}[backgroundcolor=red!10, linecolor=red!10]
+\begin{minted}{python}
+import numpy as np
+
+# Simulation parameters
+nx = 80
+ny = 80
+tau = 0.8
+omega = 1/tau
+cssq = 1/3
+nu = cssq*(tau - 0.5)
+
+tol = 1e-6
+relerror = 1
+
+eps = np.zeros((nx, ny))
+eps[:, :ny//2] = 0.1
+eps[:, ny//2:] = 1.0
+Da = np.zeros((nx, ny))
+Da[:, :ny//2] = 0.001
+Da[:, ny//2:] = 1e6
+
+H = ny + 0.5
+Re = 0.01
+u0 = Re*nu/H
+K = Da*H**2 
+Feps = 1.75/np.sqrt(150*eps**3)
+
+a = 1/cssq
+b = 1/(eps*cssq)
+c = 1/(eps*cssq**2)
+
+c0 = 0.5*(1 + eps*0.5*nu/K)
+c1 = eps*0.5*Feps/(K**0.5)
+
+# D2Q9 lattice arrangement
+ndir = 9
+w = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36, 1/36, 1/36, 1/36])
+cx = np.array([0, 1, -1, 0, 0, 1, -1, -1, 1])
+cy = np.array([0, 0, 0, 1, -1, 1, 1, -1, -1])
+
+# Simulation initialisation
+rho = np.ones((nx, ny))
+ux = np.zeros((nx, ny))
+ux[:, ny - 1] = u0 # Set the velocity at the top wall to u0
+uy = np.zeros((nx, ny))
+uxold = ux.copy()
+uyold = np.zeros((nx, ny))
+feq = np.zeros((ndir, nx, ny))
+Fdist = np.zeros((ndir,nx,ny))
+
+gx = 0
+umagn = np.sqrt(ux**2 + uy**2)
+Fx = -eps*nu*ux/K - eps*Feps*umagn*ux/(K**0.5) + eps*gx
+Fy = -eps*nu*uy/K - eps*Feps*umagn*uy/(K**0.5) 
+for k in range(ndir):
+    dotprod = cx[k]*ux + cy[k]*uy
+    udotu = ux**2 + uy**2
+    dotprodF = cx[k]*Fx + cy[k]*Fy
+    udotF = ux*Fx + uy*Fy
+
+    feq[k, :, :] = w[k]*rho*(1 + dotprod*a + dotprod**2*0.5*c - udotu*0.5*b)
+    Fdist[k, :, :] = w[k]*rho*(1-0.5*omega)*(dotprodF*a + dotprod*dotprodF*c - udotF*b) 
+
+f = np.copy(feq)
+fold = np.copy(feq)
+
+t = 0
+
+# Simulation loop
+while relerror > tol:
+
+    # Collision
+    f = (1 - omega)*fold + omega*feq + Fdist
+
+    # Streaming
+    for k in range(ndir):
+        fold[k, :, :] = np.roll(np.roll(f[k, :, :], cx[k], axis = 0), cy[k], axis = 1)
+
+    # Boundary conditions
+    # Half-way bounce-back on the bottom wall
+    fold[3, :, 0] = f[4, :, 0]
+    fold[5, :, 0] = f[7, :, 0]
+    fold[6, :, 0] = f[8, :, 0]
+    
+    # Zou & He BCs on the top wall
+    rhon = fold[0, :, ny - 1] + fold[1, :, ny - 1] + fold[2, :, ny - 1] 
+    + 2*fold[3, :, ny - 1] + 2*fold[5, :, ny - 1] + 2*fold[6, :, ny - 1]
+
+    fold[4, :, ny - 1] = f[3, :, ny - 1]
+    fold[7, :, ny - 1] = f[5, :, ny - 1] + 0.5*(f[1, :, ny - 1] - f[2, :, ny - 1]) 
+    - 0.5*rhon*u0
+    fold[8, :, ny - 1] = f[6, :, ny - 1] - 0.5*(f[1, :, ny - 1] - f[2, :, ny - 1]) 
+    + 0.5*rhon*u0
+
+    # Macroscopic variables
+    rho = fold[0, :, :] + fold[1, :, :] + fold[2, :, ] + fold[3, :, :] + fold[4, :, :] 
+    + fold[5, :, :] + fold[6, :, :] + fold[7, :, :] + fold[8, :, :]
+
+    vx = np.zeros((nx, ny))
+    vy = np.zeros((nx, ny))
+
+    for k in range(ndir):
+        vx += cx[k]*fold[k, :, :] 
+        vy += cy[k]*fold[k, :, :]
+
+    vx = vx/rho #+ 0.5*eps*gx 
+    vy /= rho
+    vmagn = np.sqrt(vx**2 + vy**2)
+    
+    ux = vx / (c0 + np.sqrt(c0**2 + c1*vmagn))
+    uy = vy / (c0 + np.sqrt(c0**2 + c1*vmagn))
+    umagn = np.sqrt(ux**2 + uy**2)
+
+    # Force computation
+    Fx = -eps*nu*ux/K - eps*Feps*umagn*ux/(K**0.5) + eps*gx
+    Fy = -eps*nu*uy/K - eps*Feps*umagn*uy/(K**0.5) 
+    
+    # Equilibrium distribution function + distributed force term
+    for k in range(ndir):
+        dotprod = cx[k]*ux + cy[k]*uy
+        udotu = ux**2 + uy**2
+        dotprodF = cx[k]*Fx + cy[k]*Fy
+        udotF = ux*Fx + uy*Fy
+        
+        feq[k, :, :] = w[k]*rho*(1 + dotprod*a + dotprod**2*0.5*c - udotu*0.5*b)
+        Fdist[k, :, :] = w[k]*rho*(1-0.5*omega)*(dotprodF*a + dotprod*dotprodF*c - udotF*b) 
+
+    # Computing relative error after 5000 time-steps
+    if t>5000:
+        num = np.sqrt((ux - uxold)**2 + (uy - uyold)**2)/umagn
+        relerror = np.max(num)
+        
+        uxold = ux
+        uyold = uy
+
+    t += 1
+\end{minted}
+\end{mdframed}

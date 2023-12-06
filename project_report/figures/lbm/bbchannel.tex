@@ -1,0 +1,60 @@
+\begin{tikzpicture}[thick,scale=1.2, every node/.style={scale=0.9}, >={Latex[length=1.5mm, width=1mm]}]
+    \draw[gray, dashed, thin] (0.25, 0) rectangle (4.25, 3);
+    \draw[line width=0.5mm] (0.25,0) -- (4.25, 0);
+    \draw[line width=0.5mm] (0.25,3) -- (4.25, 3);
+    \draw[<-, line width=0.1mm] (0.25, -0.55) -- (2.05, -0.55);
+    \draw[<-, line width=0.1mm] (4.25, -0.55) -- (2.45, -0.55);
+    \node at (2.25, -0.55) {$L$};
+    \draw[->] (-1, 0) -- (-0.5, 0);
+    \draw[->] (-1, 0) -- (-1, 0.5);
+    \node at (-0.3, 0) {$x$};
+    \node at (-1, 0.7) {$y$};
+
+    \foreach \n in {0, 1}
+    \foreach \m in {1, 2, 3, 4, 5}{
+    \filldraw[gray] (0.5*\n, 0.5*\m) circle (2pt);
+    \filldraw[gray] (4+0.5*\n, 0.5*\m) circle (2pt);
+    }
+    % \node at (0.35, 1.66) {$f_0$};
+    \node at (0.25, 3.5) {Inlet};
+    % \node at (8.35, 1.66) {$f_0$};
+    \node at (4.25, 3.5) {Outlet};
+    \node at (0.1, -0.25) {$x_{n_x}$};
+    \node at (0.5, -0.25) {$x_1$};
+    \node at (4.1, -0.25) {$x_{n_x}$};
+    \node at (4.5, -0.25) {$x_1$};
+    
+    \draw[red, ->] (0, 1) -- (0.53, 1);
+    \node[red] at (0.707, 1) {$f_1$};
+    \draw[red, ->] (0, 1) -- (0.53, 0.47);
+    \node[red] at (0.707, 0.293) {$f_8$};
+    \draw[red, ->] (0, 1) -- (0.53, 1.53);
+    \node[red] at (0.707, 1.707) {$f_5$};
+    % \draw[->] (0, 1.5) -- (0, 2.25);
+    % \node at (0, 2.5) {$f_3$};
+    % \draw[->] (0, 1.5) -- (0, 0.75);
+    % \node at (0, 0.5) {$f_4$};
+    \draw[blue, ->] (0.5, 2) -- (-0.03, 2);
+    \node[blue] at (-0.207, 2) {$f_2$};
+    \draw[blue, ->] (0.5, 2) -- (-0.03, 2.53);
+    \node[blue] at (-0.207, 2.707) {$f_6$};
+    \draw[blue, ->] (0.5, 2) -- (-0.03, 1.47);
+    \node[blue] at (-0.207, 1.293) {$f_7$};
+    
+    \draw[blue, ->] (4.5, 2) -- (3.97, 2);
+    \node[blue] at (3.793, 2) {$f_2$};
+    \draw[blue, ->] (4.5, 2) -- (3.97, 2.53);
+    \node[blue] at (3.793, 2.707) {$f_6$};
+    \draw[blue, ->] (4.5, 2) -- (3.97, 1.47);
+    \node[blue] at (3.793, 1.293) {$f_7$};
+    % \draw[->] (8, 1.5) -- (8, 2.25);
+    % \node at (8, 2.5) {$f_3$};
+    % \draw[->] (8, 1.5) -- (8, 0.75);
+    % \node at (8, 0.5) {$f_4$};
+    \draw[red, ->] (4, 1) -- (4.53, 1);
+    \node[red] at (4.707, 1) {$f_1$};
+    \draw[red, ->] (4, 1) -- (4.53, 1.53);
+    \node[red] at (4.707, 1.707) {$f_5$};
+    \draw[red, ->] (4, 1) -- (4.53, 0.47);
+    \node[red] at (4.707, 0.293) {$f_8$};
+\end{tikzpicture}

@@ -1,0 +1,1689 @@
+\documentclass[a4paper, 11pt]{report}
+\usepackage{graphicx, bm, tikz, cancel}
+\usepackage{amsmath, amssymb, amsthm, amsfonts, layout}
+\usepackage{parskip} % use [indent] if you decide you want the indentations later
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{xcolor, geometry, titlesec, hyperref, tocloft, minted, setspace, mdframed}
+\usemintedstyle{pastie}
+\usetikzlibrary{arrows.meta, calc, intersections, patterns, shapes.geometric}
+\usepackage[utf8]{inputenc}
+\usepackage{pgfplots, pgffor, ifthen}
+\pgfplotsset{compat=newest}
+\usepgfplotslibrary{groupplots, dateplot}
+\usepackage[style=numeric, sorting=nyt, giveninits=true]{biblatex}
+\usepackage[toc]{appendix}
+\usepackage{subcaption}
+\usepackage[font=small]{caption}
+% \usepackage[none]{hyphenat}
+\addbibresource{refs.bib}
+\DefineBibliographyStrings{english}{%
+  page             = {p.},
+  pages            = {p.},
+} 
+\renewcommand{\labelitemii}{\labelitemiii}
+\setlength\bibitemsep{0.5em}
+
+\definecolor{green01270}{RGB}{0,127,0}
+\definecolor{lilac}{RGB}{232,226,255}
+
+\hypersetup{
+    colorlinks=true,
+    citecolor=magenta,
+    filecolor=red,
+    linkcolor=black,
+    urlcolor=black
+}
+
+\title{Modelling Fluid Flow through Porous Media}
+\author{Wen Qi Saw}
+\date{\today}
+
+\geometry{ left = 25mm, top = 25mm , right = 25mm, bottom = 25mm }
+
+\begin{document}
+\maketitle
+
+%\titleformat{\chapter}[display]   
+%{\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}   
+%\titlespacing{\chapter}{0pt}{-20pt}{25pt}
+
+\pagenumbering{roman}
+\chapter*{}
+\subsection*{Plagiarism Declaration}
+This piece of work is a result of my own work except where it forms an assessment based on group project work. In the case of a group project, the work has been prepared in collaboration with other members of the group. Material from the work of others not involved in the project has been acknowledged and quotations and paraphrases suitably indicated.
+% \section*{Acknowledgements}
+\newpage
+
+\tableofcontents
+\newpage
+\listoffigures
+% \listoftodos
+
+\hypersetup{linkcolor=cyan}
+%--------------------------------------------------------------------------------------
+%	INTRODUCTION
+%--------------------------------------------------------------------------------------
+
+\chapter{Introduction} \label{chap:1}
+\pagenumbering{arabic}
+% \todo{Insert motivations here
+% }
+% \todo{Short summary of what we do}
+% \todo{Recap previous content??}
+
+Porous media are defined as solids with pore structures through which a fluid can flow, with a common example being a sponge. The study of fluid flow in porous media has been a topic of interest in recent years, due to the enhancement of various technologies in many fields of science and engineering. For instance, porous filters are used extensively for the separation of substances, such as the filtration of seawater \cite{HARITI2020}. Modelling the fluid flow through porous media also has uses in the petroleum industry, where it is possible to simulate a gas/oil reservoir in porous rock \cite{BALHOFF202293}, and in the biomedical industry, where it can be used to model porous stents that are inserted into blood vessels to reduce the likelihood of an aneurysm rupturing \cite{aneurysmstent, effectstentporosity}.
+
+However, modelling fluid flows through these porous media is often difficult mathematically, due to the complex geometry of the porous media themselves. As such, these flows are often simulated numerically, using various computational fluid dynamics methods. 
+
+The flow through a porous medium is a multi-scale problem, with three characteristic length scales defined:
+\begin{enumerate}
+    \item the length of the pores,
+    \item the length of a characteristic volume, and
+    \item the length of the entire system,
+\end{enumerate}
+as given by Whitaker in \cite{whitakerdarcy}. Typically, fluid flow is simulated at either the microscopic level, where the motion of individual fluid molecules is considered, or a macroscopic level. With the introduction of porous media, it is preferable to model the fluid flow at the macroscopic level. Although it is possible to model the geometry of the porous media exactly, and therefore the physics of the fluid at the pore scale, this is computationally expensive and the effort required to analyse the description of the fluid motion far outweighs the value of the information obtained. Therefore, having a macroscopic model, either at the scale of a characteristic volume or of the entire system, is more beneficial. 
+
+% As such, we will use the volume averaging method which averages the governing equations over an REV in order to model the flow at a macroscopic level. 
+
+% To describe the drag effect of the porous structure on the flow, we will be using the Brinkman-Forchheimer-extended Darcy model. This consists of a linear relation proposed by Darcy in 1856, relating the flow rate and the pressure difference across the porous medium. However, this can only model flows with a low Reynolds number where viscosity dominates. To account for the non-linear behaviour of the pressure difference, Forchheimer proposed the inclusion of an additional term to Darcy's law, and Brinkman extended this further by including an effective viscosity term to account for boundary effects of the porous structure \cite[Chapter~1]{mp}.
+
+% In order to simulate the fluid flow numerically, the lattice Boltzmann method (LBM) is used. This is a mesoscopic description based on the lattice Boltzmann equation, which can be derived by discretising the Boltzmann equation over a lattice, and considers the motion of a distribution of fluid particles \cite[Chapter~3]{lbtextbook}. These fluid particles can only move in specific directions and collide in such a way that mass and momentum are conserved. To describe the collision, we will be using the collision model given by Bhatnagar, Gross \& Krook (BGK) \cite{bgk} in 1954. \todo{there needs to be an extra para here?}
+
+% \section{Objectives}
+% The objective of this report is to study the fluid flow through a porous medium and eventually simulate a two-dimensional blood flow through an aneurysm that is treated with a coil. 
+
+% The insertion of an endovascular coil is often used to treat cerebral aneurysms by blocking the blood flow through the blood vessel, thereby reducing the risk of aneurysm rupture \cite{MORALES2013}. Generally, the shape of the coil is known before it is inserted into the blood vessel, but it remains difficult to determine the exact geometry of the coil within the aneurysm itself once it is inserted even with modern imaging techniques \cite{imaging}. Accordingly, we can model the aneurysm as a porous medium. 
+
+% There are many assumptions that must be made in order to do this. For instance, blood flow is typically non-Newtonian due to the high volume of red blood cells \cite{MORALES2013} but for simplicity, we assume the fluid is Newtonian and thus, the viscosity of the fluid is constant. One could also argue that the elasticity of the coil could have an effect on the fluid flow, but the coils are packed tightly into the aneurysm itself. For that reason, we will assume the coil within the aneurysm, and therefore the porous medium used to model the aneurysm, is rigid and isotropic.
+\newpage
+\section{Outline}
+The objective of this report is to study the fluid flow through a porous medium and eventually simulate a two-dimensional blood flow through an aneurysm that is treated with a coil; an outline of the project is presented below.
+% In this project, a numerical method based on the lattice Boltzmann method is presented in order to simulate a two-dimensional fluid flow through an aneurysm, which is modelled as a porous medium. 
+
+% An outline of this project report is presented below.
+
+There are a number of ways to model the porous medium: the method used in this project is the volume averaging method, which averages the governing equations over a characteristic volume known as the representative elementary volume (REV). Another popular method is the homogenisation method, which is based on a multi-scale analysis; more information about this method is provided in Section 1.2 of \cite{homogenization} but this is not discussed in this project. Chapter \ref{chap:2} discusses the volume averaging method, following the work of Whitaker in \cite{whitakerforchheimer}. This involves averaging the microscopic fluid equations over an REV, allowing us to derive the macroscopic equations governing incompressible fluid flow through the porous medium. To describe the drag effect of the porous structure on the flow, we will be using the Brinkman-Forchheimer-extended Darcy model. This consists of a linear relation proposed by Darcy in 1856, relating the flow rate and the pressure difference across the porous medium. However, this can only model flows with a low Reynolds number where viscosity dominates. To account for the non-linear behaviour of the pressure difference, Forchheimer proposed the inclusion of an additional term to Darcy's law, and Brinkman extended this further by including an effective viscosity term to account for boundary effects of the porous structure \cite[Chapter~1]{mp}. To do this, we follow the model presented by Hsu \& Cheng in \cite{hsu+cheng}.
+
+% We will also take into account the drag effect of the porous medium by introducing additional force terms using a closure model presented by Hsu \& Cheng in \cite{hsu+cheng}.
+
+Chapter \ref{chap:3} discusses the lattice Boltzmann method (LBM), which we use to simulate the fluid numerically. This is a mesoscopic description lying between macroscopic and microscopic viewpoints and is based on the lattice Boltzmann equation, which can be derived by discretising the Boltzmann equation over a lattice. As a result, these fluid particles can only move in specific directions and must collide in such a way that mass and momentum are conserved \cite[Chapter~3]{lbtextbook}. To describe the collision, we will be using the collision model given by Bhatnagar, Gross \& Krook (BGK) \cite{bgk} in 1954. In this chapter, we will briefly introduce kinetic theory and use this to motivate the force-free LBM for pure fluids and fluid flows through porous media. The LBM can be related to the governing equations given in Chapter \ref{chap:2} using Chapman-Enskog analysis, as presented in Kr{\"u}ger et al. in \cite[Chapters~3-4]{lbtextbook}. Then, we will explain how to implement various boundary condition schemes, following the work of Pepona in \cite[Chapter 3]{mp} and Chapter 5 of \cite{lbtextbook}, and finally, the forces discussed in Chapter 2 are implemented using the work of Guo \& Zhao in \cite{guo+zhao}.
+
+% and considers the motion of a distribution of fluid particles \cite[Chapter~3]{lbtextbook}. As such, we will first briefly introduce kinetic theory and use this to motivate the force-free LBM for pure fluids and fluid flow through porous media. 
+% relating the lattice Boltzmann method with the governing equations using Chapman-Enskog analysis, as presented by Kr{\"u}ger et al. in \cite[Chapters~3-4]{lbtextbook}. Then, we will explain how to implement various boundary condition schemes, following the work of Pepona in \cite[Chapter 3]{mp} and Chapter 5 of \cite{lbtextbook}, and finally, the forces discussed in Chapter 2 are implemented using the work of Guo \& Zhao in \cite{guo+zhao}.
+
+% In order to simulate the fluid flow numerically, the lattice Boltzmann method (LBM) is used. This is a mesoscopic description based on the lattice Boltzmann equation, which can be derived by discretising the Boltzmann equation over a lattice, and considers the motion of a distribution of fluid particles \cite[Chapter~3]{lbtextbook}. These fluid particles can only move in specific directions and collide in such a way that mass and momentum are conserved. To describe the collision, we will be using the collision model given by Bhatnagar, Gross \& Krook (BGK) \cite{bgk} in 1954. \todo{there needs to be an extra para here?}
+
+This model is validated in Chapter \ref{chap:4}, where we study the channel flow through a porous medium with stationary and moving walls at various Reynolds and Darcy numbers. We also consider the flow through a system with regions of different porosity, comparing our obtained results to those obtained by Guo \& Zhao in \cite{guo+zhao}. All numerical simulations are run in Python, making use of the {\fontfamily{cmtt}\selectfont\textcolor{black}{numpy}} library \cite{2020NumPy-Array}, and all figures are created using {\fontfamily{cmtt}\selectfont\textcolor{black}{matplotlib}} \cite{hunter2007matplotlib}. 
+
+Finally, in Chapter \ref{chap:5}, we will simulate the blood flow through an aneurysm that has been treated by the insertion of a coil. The dynamics of the blood flow through such an aneurysm has previously been studied: researchers have modelled these coils explicitly, using spheres \cite{BYUN2004}, for instance, as well as modelling the aneurysm as a porous medium \cite{kakalis2008}. This is possible by considering the coil as the pore structure through which blood can flow. The procedure that we use to model the shape of an aneurysm and its adjacent blood vessel is detailed and we study the blood flow for various porosities and permeabilities of the aneurysm.
+
+
+%--------------------------------------------------------------------------------------
+%	VOLUME AVERAGING METHOD
+%--------------------------------------------------------------------------------------
+
+\chapter{The Method of Volume Averaging} \label{chap:2}
+% \todo[inline, color=blue!20]{motivate why we use VA instead of other methods}
+
+In this chapter, we introduce the volume averaging method and use it to derive the continuity and Navier-Stokes equations governing the fluid flow in a porous medium. As mentioned in Chapter \ref{chap:1}, porous structures often have complex geometries which can be difficult to model analytically. Such geometries are therefore computationally expensive to implement, especially if we consider the dynamics of each fluid particle. Instead, the macroscopic equations that govern the fluid flow through the porous medium are obtained by averaging the corresponding microscopic equations over a representative elementary volume (REV). This is assumed to be characteristic of the entire volume and periodic, i.e. it repeats throughout the volume.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures/rev.png}
+    \caption[A diagram of the REV]{A diagram of a representative elementary volume (REV), as provided by Whitaker in \cite{whitakerdarcy}}
+    \label{fig:rev}
+\end{figure}
+
+One advantage of using such a method is that the region over which we solve the continuity and Navier-Stokes equations is smaller, so this is much faster computationally. 
+% we can solve the continuity and Navier-Stokes equations for a representative volume macroscopically, instead of solving these equations for each pore in the medium microscopically. Since we do not have to solve for each pore explicitly, it is much faster computationally. 
+However, we no longer have information for the velocity $\mathbf{u}$ or pressure $p$ on each pore, and therefore, the real geometry of the porous medium is not modelled exactly.
+
+As shown in Figure \ref{fig:rev}, we consider the porous medium to consist of a single-phase fluid, known as the $\bm{\beta}$\textbf{-phase}, and a solid structure, known as the $\bm{\alpha}$\textbf{-phase}. Associated quantities with each phase will have a subscript $\alpha$ or $\beta$ for the $\alpha$-phase and $\beta$-phase respectively. 
+
+For the fluid, we will also assume that it is incompressible and Newtonian, and that the porous medium is isotropic and homogeneous. 
+
+% \section{Method}
+% We will use the following method to write the microscopic conservation equations macroscopically.
+% \begin{enumerate}
+% 	\item Assume the conservation equations hold true on a \emph{microscopic} level.
+% 	\item Use the spatial averaging theorems to express the conservation equations in terms of their phase averages.
+% 	% \item Consider the fluctuations from the averages and form a closure model.
+% \end{enumerate}
+
+% \section{Implementation}
+\section{Definitions}
+% Consider a representative elementary volume $V$ in a porous medium consisting of a fluid phase and a solid phase, denoted by $f$ and $s$ respectively. 
+Here, we use the definitions given in Section 2 of \cite{whitakerdarcy}. For a quantity $\psi_\beta$ associated with the $\beta$-phase, we define the \textbf{superficial phase average} as
+\begin{equation}
+\langle\psi_\beta\rangle = \frac{1}{V} \int_{V_\beta} \! \psi_\beta \, \mathrm{d}V, \label{eq:2.1}
+\end{equation}
+where $V$ is the volume of the REV. We also define the \textbf{intrinsic phase average} as
+\begin{equation}
+\langle\psi_\beta\rangle^\beta = \frac{1}{V_\beta} \int_{V_\beta} \! \psi_\beta \, \mathrm{d}V, \label{eq:2.2}
+\end{equation}
+where $V_\beta$ is the volume occupied by the $\beta$-phase in $V$. Note that $\psi_\beta$ can be both a vector and scalar quantity.
+
+We can then define the \textbf{porosity} $\varepsilon_\beta$ as 
+\begin{equation}
+    \varepsilon_\beta = \frac{V_\beta}{V}, \label{eq:2.3}
+\end{equation}
+where a \textit{pure fluid} with no solid structure will have $\varepsilon_\beta = 1$ and a \textit{pure solid} will have $\varepsilon_\beta = 0$. From the above equations, we can also see that $\langle\psi_\beta\rangle = \varepsilon_\beta \langle\psi_\beta\rangle^\beta$.
+
+% RELABEL CHAPTER 2 EQUATIONS FROM THIS POINT
+
+\section{Theorems} \label{sec:2.2}
+To describe the macroscopic conservation equations from the microscopic conservation equations, we need to use the following theorems \cite{hsu+cheng, whitakerforchheimer}:
+\begin{subequations}
+\begin{enumerate}
+	
+	\item Time differentiation
+	\begin{equation}
+	\left\langle\frac{\partial\psi_\beta}{\partial t}\right\rangle = \frac{1}{V} \int_{V_\beta} \! \frac{\partial}{\partial t}(\psi_\beta) \, \mathrm{d}V = \frac{\partial}{\partial t} \left( \frac{1}{V} \int_{V_\beta} \! \psi_\beta \, \mathrm{d}V \right) = \frac{\partial}{\partial t}\langle\psi_\beta\rangle. \label{eq:2.4a}
+	\end{equation}
+	
+	\item Gradient theorem
+	\begin{equation}
+	\langle\nabla\psi_\beta\rangle = \nabla\langle\psi_\beta\rangle + \frac{1}{V} \int_{A_{\alpha,\beta}} \! \psi_\beta \hat{\mathbf{n}} \, \mathrm{d}A. \label{eq:2.4b}
+	\end{equation}
+ 
+	\item Divergence theorem
+	\begin{equation}
+	\langle\nabla\cdot\bm{\psi}_\beta\rangle = \nabla\cdot\langle\bm{\psi}_\beta\rangle +\frac{1}{V} \int_{A_{\alpha,\beta}} \! \bm{\psi}_\beta \cdot \hat{\mathbf{n}} \, \mathrm{d}A. \label{eq:2.4c}
+	\end{equation}
+ 
+\end{enumerate}
+\end{subequations}
+Here, $A_{\alpha,\beta}$ is the area of the surface between the $\alpha$-phase and $\beta$-phase, and $\hat{\mathbf{n}}$ is the unit normal vector at the surface between the 2 phases. 
+
+Equations (\ref{eq:2.4b}) and (\ref{eq:2.4c}) are known as the \textbf{spatial averaging theorems} and a proof of these theorems is provided by Whitaker in \cite{spatialavethm} but will be omitted from this report.
+
+We assume that the porous medium is rigid and stationary, and require the no-slip boundary condition to be satisfied:
+\begin{equation}
+	\mathbf{u}_{\beta} =\mathbf{0} \quad \text{on} \quad A_{\alpha,\beta}. \label{eq:2.5} % \quad adds a space
+\end{equation}
+Therefore, when $\bm{\psi}_\beta = \mathbf{u}_{\beta}$, the boundary terms in the above theorems vanish.
+
+\section{Continuity Equation}
+With these definitions and theorems, we are now ready to give a macroscopic description of the fluid equations. We begin with the microscopic continuity equation, given by
+
+\begin{equation}
+    \frac{\partial\rho_{\beta}}{\partial t} + \nabla \cdot (\rho_{\beta} \mathbf{u}_{\beta}) = 0, \label{eq:2.6}
+\end{equation}
+where $\rho_\beta$ is the density of the fluid. As we assume the fluid is incompressible, we can therefore ignore the variations of $\rho$ in the REV. Thus, $\rho = \rho_{\beta}$ and $\frac{\partial\rho}{\partial t} = 0$. 
+% Here, we assume the fluid properties are unchanged in the REV, i.e. $\rho = \rho_{\beta}$ and $\mu = \mu_{\beta}$, and we omit the subscript $\beta$ from these variables.
+% We have assumed the fluid is incompressible and we can therefore ignore the variations of $\rho$ in the REV. Thus, $\rho = \rho_{\beta}$ and $\frac{\partial\rho}{\partial t} = 0$. 
+
+Taking the phase average, we get
+% \begin{equation*}
+%     \left\langle\frac{\partial\rho}{\partial t}\right\rangle + \langle\nabla\cdot(\rho\mathbf{u}_{\beta})\rangle = 0.
+% \end{equation*}
+
+% Clearly, the first term vanishes as $\rho$ is unchanged in the REV, so we are left with 
+\begin{equation*}
+	\langle\nabla\cdot(\rho\mathbf{u}_{\beta})\rangle = 0. 
+\end{equation*}
+
+Using the volume averaging divergence theorem (\ref{eq:2.4c}) and the boundary condition (\ref{eq:2.5}), we obtain the equation:
+\begin{equation*}
+	\rho\nabla\cdot\langle\mathbf{u}_{\beta}\rangle + \cancel{\frac{1}{V} \int_{A_{\alpha,\beta}} \! \rho\mathbf{u}_{\beta} \cdot \hat{\mathbf{n}} \, \mathrm{d}A} = 0.
+\end{equation*}
+
+As the fluid has non-zero density, we therefore obtain the following equation \textbf{macroscopic continuity equation}:
+\begin{equation}
+    \boxed{\nabla\cdot\langle\mathbf{u}_{\beta}\rangle = 0.} \label{eq:2.7}
+\end{equation}
+
+This can also be rewritten in terms of the intrinsic phase average as
+\begin{equation}
+	\nabla\cdot(\varepsilon_\beta\langle\mathbf{u}_{\beta}\rangle^\beta) = 0. \label{eq:2.8}
+\end{equation}
+
+\section{Navier-Stokes Equations}
+To describe the motion of a viscous fluid, we use equation (6.39) from \cite[Chapter~6]{fmnotes}:
+% The Navier-Stokes equations that also govern the (microscopic) fluid flow can be written as
+\begin{equation}
+	\rho_{\beta}\left(\frac{\partial \mathbf{u}_{\beta}}{\partial t} + \mathbf{u}_{\beta} \cdot \nabla \mathbf{u}_{\beta} \right) = -\nabla p_{\beta} + \mu_{\beta} \nabla^2 \mathbf{u}_{\beta} + \rho_{\beta} \mathbf{g}, \label{eq:2.9}
+\end{equation}
+where $p_\beta$ and $\mu_\beta$ are the pressure and viscosity of the $\beta$-phase and $\mathbf{g}$ is an external body force different from the porous ones, such as the force due to gravitational acceleration. %For simplicity, we will neglect this ter
+m.
+
+As before, we will ignore the variations in $\rho_{\beta}$ due to the incompressibility condition. We will also ignore the variations in $\mu_{\beta}$ within the averaging volume. %assume the density $\rho_{\beta}$ and kinematic viscosity $\mu_{\beta}$ are unchanged in the REV and omit the subscript $\beta$ from these variables.
+
+Taking the phase average of the equation (\ref{eq:2.9}), we get
+\begin{equation}
+	\rho\left\langle\frac{\partial\mathbf{u}_{\beta}}{\partial t}\right\rangle + \rho\langle\nabla\cdot(\mathbf{u}_{\beta}\mathbf{u}_{\beta})\rangle = -\langle\nabla p_{\beta}\rangle + \mu\langle\nabla\cdot\nabla\mathbf{u}_{\beta}\rangle +  \rho\langle\mathbf{g}\rangle, \label{eq:2.10} % \rho\langle\mathbf{g}\rangle
+\end{equation}
+where we have also rewritten $\nabla^2\mathbf{u}_{\beta}=\nabla\cdot\nabla\mathbf{u}_{\beta}$, and $\mathbf{u}_{\beta} \cdot \nabla \mathbf{u}_{\beta}=\nabla \cdot (\mathbf{u}_{\beta}\mathbf{u}_{\beta})$. The latter equality can be shown using Einstein summation convention and the incompressibility assumption:
+\begin{equation}
+    \nabla \cdot (\mathbf{u}\mathbf{u}) = \frac{\partial}{\partial x_j}(u_iu_j) = u_i\frac{\partial}{\partial x_j}(u_j) + u_j\frac{\partial}{\partial x_j}(u_i) = \cancel{\mathbf{u}(\nabla \cdot \mathbf{u})} + \mathbf{u} \cdot \nabla \mathbf{u}. \label{eq:2.11}
+\end{equation}
+
+As $\mathbf{g}$ is an external body force, we can assume that it does not vary within the averaging volume and we therefore have $\langle\mathbf{g}\rangle = \mathbf{g}\langle 1\rangle$, where $\langle 1\rangle = \frac{V_\beta}{V} = \varepsilon_\beta$ using definition (\ref{eq:2.1}).
+
+Using the spatial averaging theorems in Section \ref{sec:2.2} and the no-slip boundary condition (\ref{eq:2.5}), (\ref{eq:2.10}) becomes
+\begin{align*}
+	&\rho\frac{\partial}{\partial t}\langle\mathbf{u}_{\beta}\rangle + \rho\nabla\cdot\langle\mathbf{u}_{\beta}\mathbf{u}_{\beta}\rangle + \cancel{\frac{1}{V} \int_{A_{\alpha,\beta}} \! \rho\mathbf{u}_{\beta}\mathbf{u}_{\beta} \hat{\mathbf{n}} \, \mathrm{d}A} \\ &= -\nabla\langle p_{\beta}\rangle - \frac{1}{V}\int_{A_{\alpha,\beta}} \! p_{\beta} \hat{\mathbf{n}} \, \mathrm{d}A + \mu\nabla\cdot\langle\nabla\mathbf{u}_{\beta}\rangle + \frac{1}{V}\int_{A_{\alpha,\beta}} \! \mu\nabla\mathbf{u}_{\beta}\cdot \hat{\mathbf{n}} \, \mathrm{d}A + \rho\varepsilon_\beta\mathbf{g}\\ &= -\nabla\langle p_{\beta}\rangle + \mu\nabla^2\langle\mathbf{u}_{\beta}\rangle + \cancel{\frac{\mu}{V}\nabla\cdot \int_{A_{\alpha,\beta}} \! \mathbf{u}_{\beta} \cdot \hat{\mathbf{n}} \, \mathrm{d}A} + \frac{1}{V}\int_{A_{\alpha,\beta}} \! (-p_{\beta}\mathbf{I} + \mu\nabla\mathbf{u}_{\beta})\cdot \hat{\mathbf{n}} \, \mathrm{d}A + \rho\varepsilon_\beta\mathbf{g},
+\end{align*}
+where $\mathbf{I}$ is the identity matrix. Writing this out gives
+\begin{equation}
+    \boxed{\rho\frac{\partial}{\partial t}\langle\mathbf{u}_{\beta}\rangle + \rho\nabla\cdot\langle\mathbf{u}_{\beta}\mathbf{u}_{\beta}\rangle = -\nabla\langle p_{\beta}\rangle + \mu\nabla^2\langle\mathbf{u}_{\beta}\rangle + \rho\varepsilon_\beta\mathbf{g} + \mathbf{B},} \label{eq:2.12}
+\end{equation}
+where we define
+% Applying the volume-averaged gradient theorem again on the third term of the RHS gives
+% \begin{equation}
+% 	\rho\frac{\partial}{\partial t}\langle\mathbf{u}_{\beta}\rangle  + \rho\nabla\cdot\langle\mathbf{u}_{\beta}\mathbf{u}_{\beta}\rangle = -\nabla\langle p_{\beta}\rangle + \mu\nabla^2\langle\mathbf{u}_{\beta}\rangle + \cancel{\frac{\mu}{V}\nabla\cdot \int_{A_{\alpha,\beta}} \! \mathbf{u}_{\beta} \cdot \hat{\mathbf{n}} \, \mathrm{d}A} + \mathbf{B}, \label{eq:2.10}
+% \end{equation}
+% where $\mathbf{I}$ is the identity matrix and
+\begin{equation}
+	\mathbf{B} = \frac{1}{V}\int_{A_{\alpha,\beta}} \! (-p_{\beta}\mathbf{I} + \mu\nabla\mathbf{u}_{\beta})\cdot \hat{\mathbf{n}} \, \mathrm{d}A \label{eq:2.13}
+\end{equation}
+as the total drag force per unit volume due to the presence of solid particles, consisting of a pressure term and a viscous term.
+
+Notice that in (\ref{eq:2.12}), we have the average of a product ($\langle\mathbf{u}_\beta\mathbf{u}_\beta\rangle$ which we want to eliminate. To eliminate the average of a product $\langle\psi_{\beta}\xi_{\beta}\rangle$, we make use of the velocity decomposition as given by Gray \cite{gray}:
+\begin{subequations}
+\begin{align}
+	\psi_\beta &= \langle\psi_\beta\rangle^\beta + \psi_\beta', \label{eq:2.14a} \\
+	\xi_\beta &= \langle\xi_\beta\rangle^\beta + \xi_\beta', \label{eq:2.14b}
+\end{align}
+where we decompose each quantity into the sum of the intrinsic $\beta$-phase average and a fluctuating component. We also assume the associated $\alpha$-phase quantities are zero:
+\begin{equation}
+	\psi_\alpha = \psi_\alpha' = 0 \quad \text{and} \quad \xi_\alpha = \xi_\alpha' = 0. \label{eq:2.14c}
+\end{equation}
+Assuming the averages of $\psi_\beta$ and $\xi_\beta$ are well-behaved, we have that the averages of the fluctuations vanish:
+\begin{equation}
+	\langle\psi_\beta'\rangle = \langle\psi_\beta'\rangle^\beta = 0 \quad \text{and} \quad \langle\xi_\beta'\rangle = \langle\xi_\beta'\rangle^\beta = 0,\label{eq:2.14d}
+\end{equation}
+and the variation of an average quantity is the average quantity itself:
+\begin{equation}
+	\langle\langle\psi_\beta\rangle^\beta\rangle = \langle\langle\psi_\beta\rangle^\beta\rangle^\beta = \langle\psi_\beta\rangle^\beta \quad \text{and} \quad \langle\langle\psi_\beta\rangle\rangle = \langle\langle\psi_\beta\rangle\rangle^\beta = \langle\psi_\beta\rangle.\label{eq:2.14e}
+ \end{equation}
+\end{subequations} \label{eq:2.14}
+Then
+\begin{align}
+	\langle\psi_\beta\xi_\beta\rangle &= \varepsilon_\beta\langle\psi_\beta\xi_\beta\rangle^\beta \nonumber \\
+	&= \varepsilon_\beta \left[\langle\langle\psi_\beta\rangle^\beta\langle\xi_\beta\rangle^\beta\rangle^\beta + \langle\psi_\beta'\langle\xi_\beta\rangle^\beta\rangle^\beta + \langle\langle\psi_\beta\rangle^\beta\xi_\beta'\rangle^\beta+\langle\psi_\beta'\xi_\beta'\rangle^\beta\right]. \label{eq:2.15}
+\end{align}
+Assuming $\langle\psi_\beta\rangle^\beta$ and $\langle\xi_\beta\rangle^\beta$ are constant in REV and using (\ref{eq:2.14d}), we get
+\begin{align*}
+	&\langle\langle\psi_\beta\rangle^\beta\langle\xi_\beta\rangle^\beta\rangle^\beta = \langle\psi_\beta\rangle^\beta\cdot\langle\xi_\beta\rangle^\beta, \\
+    &\langle\psi_\beta'\langle\xi_\beta\rangle^\beta\rangle^\beta = \langle\psi_\beta'\rangle^\beta\cdot\langle\xi_\beta\rangle^\beta = 0, \\
+    &\langle\langle\psi_\beta\rangle^\beta\xi_\beta'\rangle^\beta = \langle\psi_\beta\rangle^\beta\cdot\langle\xi_\beta'\rangle^\beta = 0.
+\end{align*}
+Finally, assuming $\psi_\beta' \ll \langle\psi_\beta\rangle^\beta$ and $\xi_\beta' \ll \langle\xi_\beta\rangle^\beta$, $\langle\psi_\beta'\xi_\beta'\rangle^\beta$ must be negligible and can therefore be taken as 0, giving
+\begin{equation}
+	\boxed{\langle\psi_\beta\xi_\beta\rangle = \varepsilon_\beta\langle\psi_\beta\rangle^\beta\langle\xi_\beta\rangle^\beta.} \label{eq:2.16}
+\end{equation}
+
+Using (\ref{eq:2.16}) in (\ref{eq:2.12}), we get
+\begin{equation}
+    \rho\frac{\partial}{\partial t}\langle\mathbf{u}_{\beta}\rangle + \rho\nabla\cdot(\varepsilon_\beta\langle\mathbf{u}_{\beta}\rangle^\beta\langle\mathbf{u}_{\beta}\rangle^\beta) = -\nabla\langle p_{\beta}\rangle + \mu\nabla^2\langle\mathbf{u}_{\beta}\rangle + \rho\varepsilon_\beta\mathbf{g} + \mathbf{B}. \label{eq:2.17}
+\end{equation}
+Rewriting the second term in terms of the superficial phase average and dividing by $\rho$, we get
+% Returning to the superficial phase average and dividing by $\rho$, we get
+\begin{equation}
+    \boxed{\frac{\partial}{\partial t}\langle\mathbf{u}_{\beta}\rangle + \nabla\cdot\left(\frac{\langle\mathbf{u}_{\beta}\rangle\langle\mathbf{u}_{\beta}\rangle}{\varepsilon_\beta}\right) = -\frac{1}{\rho}\nabla\langle p_{\beta}\rangle + \nu\nabla^2\langle\mathbf{u}_{\beta}\rangle + \varepsilon_\beta\mathbf{g} + \frac{1}{\rho}\mathbf{B},} \label{eq:2.18}
+\end{equation}
+where $\nu = \frac{\mu}{\rho}$ is the \textbf{kinematic viscosity}.
+
+
+\section{Closure Modelling for the Drag Force due to the Porous Medium} \label{sec:2.5}
+% \todo[inline, color=green!40]{discuss closure, see \cite{hsu+cheng}, mention the darcy/forchheimer terms}
+% \textcolor{blue}{ See \cite{whitakerforchheimer, whitakerdarcy, hsu+cheng} }
+
+To obtain closure for the body force term $\mathbf{B}$ given by (\ref{eq:2.13}), we use the model presented by Hsu \& Cheng in \cite{hsu+cheng}, where we consider the porous medium to be a dilute random array of spheres of diameter $d_p$ that do not interact within the medium. It can then be shown that $\mathbf{B}$ reduces to Ergun's expression \cite{ergun}:
+
+\begin{equation}
+    \mathbf{B} = -\left[\frac{\mu\varepsilon_\beta}{K}\langle\mathbf{u}_\beta\rangle + \rho\frac{F_\varepsilon\varepsilon_\beta}{\sqrt{K}}\langle\mathbf{u}_\beta\rangle\left|\langle\mathbf{u}_\beta\rangle\right|\right], \label{eq:2.19}
+\end{equation}
+where the \textbf{permeability} $K$ is related to the porosity by
+\begin{equation}
+    K = \frac{\varepsilon_\beta^3 d_p^2}{150(1-\varepsilon_\beta)^2}, \label{eq:2.20}
+\end{equation}
+and is a property of a material that describes how easily a fluid can flow through it. $F_\varepsilon$ is the \textbf{Forchheimer coefficient}, a geometric function of the porous medium given by
+\begin{equation}
+    F_\varepsilon = \frac{1.75}{\sqrt{150\varepsilon_\beta^3}}. \label{eq:2.21}
+\end{equation}
+The equation (\ref{eq:2.19}) consists of a linear term and a non-linear term, which correspond to the viscous (Darcy) drag term and the inertial (Forchheimer) drag term respectively. 
+
+
+Therefore the \textbf{macroscopic momentum equation} for an incompressible flow in a constant porosity medium is
+\begin{subequations} \label{eq:2.22}
+\begin{equation}
+    \boxed{\frac{\partial}{\partial t}\langle\mathbf{u}_{\beta}\rangle + \nabla\cdot\left(\frac{\langle\mathbf{u}_{\beta}\rangle\langle\mathbf{u}_{\beta}\rangle}{\varepsilon_\beta}\right) = -\frac{1}{\rho}\nabla\langle p_{\beta}\rangle + \nu\nabla^2\langle\mathbf{u}_{\beta}\rangle + \mathbf{F}} \label{eq:2.22a}
+\end{equation}
+with
+\begin{equation}
+    \boxed{\mathbf{F} = \varepsilon_\beta\mathbf{g} - \left[\frac{\nu\varepsilon_\beta}{K}\langle\mathbf{u}_\beta\rangle + \frac{F_\varepsilon\varepsilon_\beta}{\sqrt{K}}\langle\mathbf{u}_\beta\rangle\left|\langle\mathbf{u}_\beta\rangle\right|\right].} \label{eq:2.22b}
+\end{equation}
+\end{subequations}
+In terms of the intrinsic phase average, the above equations are
+\begin{subequations}
+\begin{equation}
+    \frac{\partial}{\partial t}\langle\mathbf{u}_\beta\rangle^\beta + \nabla\cdot\left(\langle\mathbf{u}_\beta\rangle^\beta\langle\mathbf{u}_\beta\rangle^\beta\right) = -\frac{1}{\rho}\nabla\langle p_\beta\rangle^\beta + \nu\nabla^2\langle\mathbf{u}_\beta\rangle^\beta + \mathbf{\tilde{F}} \label{eq:2.23a}
+\end{equation}
+with
+\begin{equation}
+    \mathbf{\tilde{F}} = \mathbf{g} - \left[\frac{\nu\varepsilon_\beta}{K}\langle\mathbf{u}_\beta\rangle^\beta + \frac{F_\varepsilon\varepsilon_\beta^2}{\sqrt{K}}\langle\mathbf{u}_\beta\rangle^\beta|\langle\mathbf{u}_\beta\rangle^\beta|\right]. \label{eq:2.23b}
+\end{equation}
+\end{subequations} \label{eq:2.23}
+
+% \section{Dimensionless numbers}
+
+%--------------------------------------------------------------------------------------
+%	LATTICE BOLTZMANN METHOD
+%--------------------------------------------------------------------------------------
+
+\chapter{The Lattice Boltzmann Method} \label{chap:3}
+% \todo[inline, color=blue!20]{insert motivation behind lbm, some history}
+% \todo[inline, color=blue!20]{advantages and limitations}
+% \textcolor{blue}{ Lattice Boltzmann Textbook for sections 3.1, 3.2 }
+% \todo[inline, color=blue!20]{rewrite ch introduction}
+The lattice Boltzmann method (LBM) is a computational fluid dynamics method developed from lattice gas models \cite[Chapter~2]{lbtextbook}. It is based on \emph{mesoscopic} kinetic theory, describing the behaviour of a collection of particles, instead of the motion of individual particles, as described by Viggen in \cite[Chapter~1]{lbfund} and Kr{\"u}ger et al. in \cite[Section~1.3]{lbtextbook}. %Time, space and velocity are discretised to give the discretised Boltzmann equation. 
+
+% making LBM easier to implement, as described in \cite{lbch3}. LBM is also well-suited to simulate complex geometries, such as those in porous media, making it our method of choice in this project. Conventional numerical methods, such as the finite difference (FD) method, often have to discretise the non-linear advection term $\mathbf{u}\cdot\nabla\mathbf{u}$ and consider the non-linear interaction between lattice nodes, increasing the complexity of the computations. Comparatively, interactions between nodes in LBM are linear, as the detail lies within the nodes themselves, with the heaviest computations being local. 
+
+% The Boltzmann equation, which LBM is based off of, is discretised, making use
+
+
+% Specifically, it is a discretisation of the Boltzmann equation, making use of the fact that time, space and velocity are discretised. Fundamentally, the lattice Boltzmann method involves sending and receiving information to and from the neighbouring lattice nodes in the direction of the discrete velocities.
+
+% from a lattice node is sent to the neighbouring nodes in the direction of the discrete velocities as part of a process known as \emph{streaming}.
+
+% This chapter discusses the force-free lattice Boltzmann method applied first to a pure fluid, and then to a flow through porous media. Various boundary condition schemes are discussed, as well as their implementation, before considering the forces from the porous medium. 
+
+% This chapter develops and applies the method first to a pure fluid, and then to fluid flow through porous media. Various boundary condition schemes are discussed, be %see how the LBM is used to model blood flow through an aneurysm.
+
+% LBM was developed from lattice gas models \cite[Chapter~2]{lbtextbook}, and is based on \emph{mesoscopic} kinetic theory, describing the behaviour of a collection of particles, instead of the motion of individual particles \cite[Chapter~1]{lbtextbook}. 
+
+% \todo[inline, color=blue!20]{need basic desc of lbm?}
+
+As described in \cite[Chapter~3]{lbtextbook}, the LBM is well-suited to simulating complex geometries, such as those in porous media, and is simpler to implement compared to other numerical methods as it is based on the Boltzmann equation. Conventional numerical methods, such as the finite difference method (detailed in Section 2.1.1 of \cite{lbtextbook}), often have to discretise the non-linear advection term $\mathbf{u}\cdot\nabla\mathbf{u}$ (as seen in equation (\ref{eq:2.9})) and consider the non-linear interaction between lattice nodes, increasing the complexity of the computations. Comparatively, interactions between nodes in LBM are linear with the heaviest computations being local, as the detail lies within the nodes themselves. 
+
+In this chapter, we will first give a basic introduction to kinetic theory in Section \ref{sec:3.1}, before outlining the LBM in Section \ref{sec:3.2} for pure fluids and fluid flows through porous media without forces. Section \ref{sec:3.3} explains how several boundary conditions work and how they can be implemented and finally, Section \ref{sec:3.4} discusses how we can implement the forces discussed in Section \ref{sec:2.5}.
+
+\section{Kinetic Theory} \label{sec:3.1}
+\textbf{Mesoscopic kinetic theory} is a theory between macroscopic and microscopic viewpoints that describes the distribution of particles in a fluid. It is typically applied to dilute monatomic gases, where molecules spend very little time colliding and almost always collide 1-on-1. This does not hold true for dense gases or liquids, but it is possible to formulate a kinetic theory for these fluids, which we will not discuss. More details about this can be seen in \cite{liquidkin}. We will also assume that the behaviour of polyatomic and monatomic gases is the same.
+
+A \textbf{particle distribution function} $f(\mathbf{x},\bm{\xi},t)$ is used to describe the probability of a group of particles being at position $\mathbf{x}$ with velocity $\bm{\xi}$ at time $t$. We consider $f$ to be a generalisation of the density $\rho$ that takes the microscopic particle velocity $\bm{\xi}$ into account.
+\newpage
+From its \textbf{moments}, which are integrals of $f$ weighted with some function of $\bm{\xi}$ over the entire velocity space, we can connect the distribution function $f$ to the macroscopic \textbf{mass density} $\rho$ and the macroscopic \textbf{momentum density} $\rho\mathbf{u}$ through the following equations:
+\begin{subequations}
+\begin{align}
+	\rho(\mathbf{x},t) &= \int \! f(\mathbf{x},\bm{\xi},t) \, \mathrm{d}^n\xi, \label{eq:3.1a} \\
+	\rho(\mathbf{x},t)\mathbf{u}(\mathbf{x},t) &= \int \! \bm{\xi}f(\mathbf{x},\bm{\xi},t) \, \mathrm{d}^n\xi, \label{eq:3.1b}
+\end{align}
+where $n$ is the number of dimensions.
+\end{subequations} \label{eq:3.1}
+
+To describe how $f$ evolves in time, we consider its total time derivative
+\begin{equation}
+    \frac{\mathrm{d}f}{\mathrm{d}t} = \left( \frac{\partial f}{\partial t} \right) \frac{\mathrm{d}t}{\mathrm{d}t} + \left( \frac{\partial f}{\partial x_\mu}\right) \frac{\mathrm{d}x_\mu}{\mathrm{d}t} + \left( \frac{\partial f}{\partial \xi_\mu} \right) \frac{\mathrm{d} \xi_\mu}{\mathrm{d} t}, \label{eq:3.2}
+\end{equation}
+where we use Einstein summation convention to indicate that $f$ is differentiated over each term in $\mathbf{x}$ and $\bm{\xi}$, with $\mu=1,\dots,\text{ }n$. To simplify this further, we use the fact that $\frac{\mathrm{d}t}{\mathrm{d}t} = 1$ and we define the particle velocity as $\xi_\mu=\frac{\mathrm{d}x_\mu}{\mathrm{d}t}$. Further, using Newton's second law $\mathbf{F} = \rho\frac{\mathrm{d} \bm{\xi}}{\mathrm{d} t}$, we notice that $\frac{\mathrm{d} \xi_\mu}{\mathrm{d} t}$ can be rewritten as $\frac{F_\mu}{\rho}$, where $\mathbf{F}$ is the specific body force. This gives
+\begin{equation}
+    \frac{\mathrm{d}f}{\mathrm{d}t} = \frac{\partial f}{\partial t} + \xi_\mu\frac{\partial f}{\partial x_\mu} + \frac{F_\mu}{\rho} \frac{\partial f}{\partial \xi_\mu}. \label{eq:3.3}
+\end{equation}
+
+% When a fluid has been left alone for a sufficient amount of time, we assume that it reaches a state of equilibrium, denoted by an \textbf{equilibrium function} $f^{\mathrm{eq}}(\mathbf{x},\bm{\xi},t)$, which has the same moments of density as $f$. It is also known as the \textbf{Maxwell-Boltzmann distribution}, which is given by
+% \begin{equation}
+%     f^{\mathrm{eq}}(\mathbf{x}, |\mathbf{v}|,t) = \rho\left(\frac{\rho}{2\pi p}\right)^{d/2}e^{-p|\bm{\xi}-\mathbf{u}|^2/(2\rho)}, \label{eq:3.4}
+% \end{equation}
+% for some mean velocity $\mathbf{u}$.
+
+A common notation to use is $\Omega(f) = \frac{\mathrm{d}f}{\mathrm{d}t}$ for the total derivative, which is a source term known as the \textbf{collision operator}. It represents the local redistribution of $f$ due to collisions. Overall, we can rewrite (\ref{eq:3.2}) as
+\begin{equation}
+     \frac{\partial f}{\partial t} + \xi_\mu\frac{\partial f}{\partial x_\mu} + \frac{F_\mu}{\rho} \frac{\partial f}{\partial \xi_\mu} = \Omega(f). \label{eq:3.4}
+\end{equation}
+Equation (\ref{eq:3.3}) is also known as the \textbf{Boltzmann equation}, with the first two terms on the RHS representing the advection of the distribution function $f$ with velocity $\bm{\xi}$, and the third term representing the forces affecting the velocity $\bm{\xi}$. 
+
+As we know, collisions conserve mass, momentum and also energy, which means that the 0th, 1st and 2nd moments of the collision operator are equal to 0, as given in equations (1.48a) - (1.48c) in \cite{lbtextbook}:
+\begin{subequations} \label{eq:3.5}
+\begin{align}
+    \int \! \Omega(f) \, \mathrm{d}^n\xi = 0, \label{eq:3.5a} \\
+    \int \! \bm{\xi} \Omega(f) \, \mathrm{d}^n\xi = 0, \label{eq:3.5b} \\
+    \int \! |\bm{\xi}|^2 \Omega(f) \, \mathrm{d}^n\xi = 0. \label{eq:3.5c}
+\end{align}
+\end{subequations}
+According to Kr{\"u}ger et al. in \cite[Section 1.3.4]{lbtextbook}, Boltzmann's original form of $\Omega(f)$ is complicated, making it difficult to implement in LBM. Instead, the simplest collision operator used in LBM that satisfies (\ref{eq:3.5}), i.e. conserves mass, momentum and energy, is the \textbf{BGK (Bhatnagar-Gross-Krook) collision operator}, given by:
+\begin{equation}
+    \Omega(f) = -\frac{1}{\tau}(f - f^{\mathrm{eq}}), \label{eq:3.6}
+\end{equation}
+where $\tau$ is the \textbf{relaxation time}, or the time taken for $f$ to approach $f^{\mathrm{eq}}$. The \textbf{equilibrium distribution function}, denoted by $f^{\mathrm{eq}}$ describes the state of equilibrium that the fluid reaches when it has been left alone for a sufficient amount of time. It is also known as the \textbf{Maxwell-Boltzmann distribution}, which is given by equation (1.45) in \cite{lbtextbook}:
+\begin{equation}
+    f^{\mathrm{eq}}(\mathbf{x}, |\bm{\xi}-\mathbf{u}|,t) = \rho\left(\frac{\rho}{2\pi p}\right)^{n/2}e^{-p|\bm{\xi}-\mathbf{u}|^2/(2\rho)}, \label{eq:3.7}
+\end{equation}
+for some mean velocity $\mathbf{u}$.
+
+Another popular choice of collision operator is the multiple-relaxation-time (MRT) operator, which is known to be more accurate and stable than the BGK operator \cite{mrt}, but is also more difficult to implement, requiring more resources if not coded efficiently \cite[Section 10.7.3]{lbtextbook}. As we are using the BGK operator in this project, the MRT operator will not be discussed further, but \cite{mrt} will provide more information on this operator.
+
+\section{The Force-Free Lattice Boltzmann Equations} \label{sec:3.2}
+% \todo[inline, color=blue!20]{reorder this section to make it read easier}
+We first consider the force-free lattice Boltzmann equations, taking $\mathbf{F} = \mathbf{0}$. The Boltzmann BGK equation ((\ref{eq:3.4}) with (\ref{eq:3.6})) therefore becomes
+\begin{equation}
+    \frac{\partial f}{\partial t} + \xi_\beta\frac{\partial f}{\partial x_\beta} = -\frac{1}{\tau}(f - f^{\mathrm{eq}}). \label{eq:3.8}
+\end{equation}
+In order to solve this numerically, we need to discretise time $t$, space $\mathbf{x}$, as well as the velocity space $\bm{\xi}$, which we refer to as $\mathbf{c}_k$ in the discrete space \cite[Sections 3.4-3.5]{lbtextbook}. 
+
+Our main object of interest is the \textbf{discrete-velocity distribution function} $f_k(\mathbf{x},t)$, which describes the probability of a group of particles being at position $\mathbf{x}$ with velocity $\mathbf{c}_k$ at time $t$. We take the discrete versions of (\ref{eq:3.1}) to find the moments of $f_k$, obtaining the following equations:
+\begin{subequations} \label{eq:3.9}
+\begin{align}
+    \rho(\mathbf{x},t) &= \sum_k f_k(\mathbf{x},t), \label{eq:3.9a} \\
+    \rho\mathbf{u}(\mathbf{x},t) &= \sum_k \mathbf{c}_k f_k(\mathbf{x},t). \label{eq:3.9b}
+\end{align}
+\end{subequations}
+Here, $\mathbf{x}$ refers to a discrete set of points in a square lattice in space with lattice spacing $\Delta x$, and $\mathbf{c}_k$ is a discrete velocity. Since time is also discrete, $f_k$ is only defined at certain times $t$ with time-step $\Delta t$. For numerical simulations, we will use \textbf{lattice units}, which are an artificial set of units scaled by $\Delta x = 1$ and $\Delta t = 1$. This allows us to use the \textbf{law of similarity} \cite[Section~1.2]{lbtextbook}, which states that fluid flows that share the same dimensionless numbers exhibit the same physics, to compare systems without having to convert units. 
+
+% \begin{figure}[!hbt]
+% \centering
+% \input{figures/lbm/d2q9}
+% \caption{The D2Q9 lattice arrangement.} \label{fig:d2q9}
+% \end{figure}
+
+The discrete velocities $\textbf{c}_k$, together with the weighting coefficients $w_k$, form \textbf{velocity sets}. These are usually denoted D$n$Q$m$, where $n$ is the number of spatial directions and $m$ is the number of velocities. In this project, we use the D2Q9 configuration shown in Figure \ref{fig:d2q9}, with the explicit velocities and weighting coefficients given in Table \ref{table:d2q9}.
+
+% \begin{table} [!htb]
+% \centering
+%     \begin{tabular}{c||c|c|c|c|c|c|c|c|c}
+%     \hline
+%     $k$ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8  \\
+%     \hline
+%     & & & & & & & & &\\ [-2ex]
+%     $w_k$ & $\frac{4}{9}$ & $\frac{1}{9}$ & $\frac{1}{9}$ & $\frac{1}{9}$ & $\frac{1}{9}$ & $\frac{1}{36}$ & $\frac{1}{36}$ & $\frac{1}{36}$ & $\frac{1}{36}$ \\ [1ex]
+%     \hline
+%     $c_{kx}$ & 0 & +1 & -1 & 0 & 0 & +1 & -1 & -1 & +1 \\
+%     \hline
+%     $c_{ky}$ & 0 & 0 & 0 & +1 & -1 & +1 & +1 & -1 & -1 \\
+%     \hline
+%     $k'$ & 0 & 2 & 1 & 4 & 3 & 7 & 8 & 5 & 6 \\
+%     \hline
+%     \end{tabular}
+%     \caption{D2Q9 lattice arrangement with the velocities and weighting coefficients shown explicitly. $k'$ indicates the direction opposite $k$.}
+%     \label{table:d2q9}
+% \end{table}
+
+\begin{figure}[!hbt]
+\centering
+\input{figures/lbm/d2q9}
+\caption{The D2Q9 lattice arrangement.} \label{fig:d2q9}
+\end{figure}
+
+\begin{table} [!htb]
+\centering
+    \begin{tabular}{c||c|c|c|c|c|c|c|c|c}
+    \hline
+    $k$ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8  \\
+    \hline
+    & & & & & & & & &\\ [-2ex]
+    $w_k$ & $\frac{4}{9}$ & $\frac{1}{9}$ & $\frac{1}{9}$ & $\frac{1}{9}$ & $\frac{1}{9}$ & $\frac{1}{36}$ & $\frac{1}{36}$ & $\frac{1}{36}$ & $\frac{1}{36}$ \\ [1ex]
+    \hline
+    $c_{kx}$ & 0 & +1 & -1 & 0 & 0 & +1 & -1 & -1 & +1 \\
+    \hline
+    $c_{ky}$ & 0 & 0 & 0 & +1 & -1 & +1 & +1 & -1 & -1 \\
+    \hline
+    $k'$ & 0 & 2 & 1 & 4 & 3 & 7 & 8 & 5 & 6 \\
+    \hline
+    \end{tabular}
+    \caption{D2Q9 lattice arrangement with the velocities and weighting coefficients shown explicitly. $k'$ indicates the direction opposite $k$.}
+    \label{table:d2q9}
+\end{table}
+\newpage
+Discretising the force-free Boltzmann equation gives
+\begin{equation}
+    f_k(\mathbf{x} + \mathbf{c}_k\Delta t, t + \Delta t) = f_k(\mathbf{x}, t) + \Omega_k(\mathbf{x}, t), \label{eq:3.10} 
+\end{equation}
+where particles $f_k(\mathbf{x},t)$ move to a neighbouring point $\mathbf{x} + \mathbf{c}_k\Delta t$ at the next time step $t + \Delta t$, as shown in Figure \ref{fig:stream}.
+
+\begin{figure}[!htb]
+\centering
+\input{figures/lbm/streamcol}
+\caption[Sketch of the streaming process]{Sketch of the streaming process. Particles (\textcolor{red}{red}) streaming from the central node to its neighbours, from which particles (\textcolor{blue}{blue}) are streamed back.}
+\label{fig:stream}
+\end{figure}
+
+The collision operator $\Omega_k(\mathbf{x},t)$ is the discrete form of equation (\ref{eq:3.6}), given by
+\begin{equation}
+    \Omega_k(f) = -\frac{f_k - f_k^{\mathrm{eq}}}{\tau}\Delta t, \label{eq:3.11}
+\end{equation}
+with $f_k^{\mathrm{eq}}$ given by equation (3.4) in \cite{lbtextbook}:
+\begin{equation}
+    f_k^{\mathrm{eq}}(\mathbf{x},t) = w_k\rho \left( 1 + \frac{\mathbf{u}\cdot\mathbf{c}_k}{c_s^2} + \frac{(\mathbf{u}\cdot\mathbf{c}_k)^2}{2c_s^4} - \frac{\mathbf{u}\cdot\mathbf{u}}{2c_s^2}\right), \label{eq:3.12}
+\end{equation}
+where $\mathbf{u}$ is the fluid velocity that can be found when dividing (\ref{eq:3.9b}) by (\ref{eq:3.9a}) and $c_s$ is the \textbf{sound speed} defined as $c_s^2 = \frac{1}{3}\frac{(\Delta x)^2}{(\Delta t)^2} = \frac{1}{3}$, with the final equality holding true when we work in lattice units. $c_s$ also satisfies the equation of state $p = c_s^2\rho$. 
+
+Combining (\ref{eq:3.10}) and (\ref{eq:3.11}), we get
+\begin{equation}
+    f_k(\mathbf{x} + \mathbf{c}_k\Delta t, t + \Delta t) = f_k(\mathbf{x}, t) -\frac{f_k - f_k^{\mathrm{eq}}}{\tau}\Delta t, \label{eq:3.13}
+\end{equation}
+which can be decomposed into 2 parts.
+
+\begin{enumerate}
+    \item \textbf{Collision} (or relaxation), is where a \emph{local} algebraic operation is completed, given by
+    \begin{equation}
+        f_k^*(\mathbf{x},t) = f_k(\mathbf{x}, t) -\frac{f_k - f_k^{\mathrm{eq}}}{\tau}\Delta t. \label{eq:3.14}
+    \end{equation}
+    Here, $f_k^*$ represents the distribution function \emph{after} collisions, and we calculate $f_k^{\mathrm{eq}}$ using (\ref{eq:3.12}). For convenience, we will typically compute
+    \begin{equation}
+        f_k^*(\mathbf{x},t) = \left(1-\frac{\Delta t}{\tau}\right)f_k(\mathbf{x}, t) + \frac{\Delta t}{\tau}f_k^{\mathrm{eq}}(\mathbf{x},t). \label{eq:3.15}
+    \end{equation}
+    \item \textbf{Streaming} (or propagation) is shown in Figure \ref{fig:stream}, where we stream the resulting distribution $f_k^*$ to the neighbouring nodes:
+    \begin{equation}
+        f_k(\mathbf{x} + \mathbf{c}_k\Delta t, t + \Delta t) = f_k^*(\mathbf{x},t). \label{eq:3.16}
+    \end{equation}
+\end{enumerate}
+
+\subsection{Implementation}
+\subsubsection{Initialisation}
+To initialise, we set the initial values of the density and velocity fields $\rho(\mathbf{x},t=0)$ and $\mathbf{u}(\mathbf{x},t=0)$ and allocate these to two-dimensional arrays of size $(n_x, n_y)$. Here, $n_x$ and $n_y$ are the number of lattice nodes in the $x$- and $y$- directions. Then we compute the equilibrium distribution function $$f_k^{\mathrm{eq}}(\mathbf{x},t=0) = f_k^{\mathrm{eq}}\left(\rho(\mathbf{x},t=0),\mathbf{u}(\mathbf{x},t=0)\right)$$ using the initial values of $\rho(\mathbf{x},t=0)$ and $\mathbf{u}(\mathbf{x},t=0)$ in (\ref{eq:3.12}). We also set the particle distribution function $f_k(\mathbf{x},t=0)$ to be initially equal to $f_k^{\mathrm{eq}}(\mathbf{x},t=0)$. Computationally, we set $f$ and $f^{\mathrm{eq}}$ to be arrays of size $(9, n_x, n_y)$ to account for the 9 directions in the D2Q9 lattice arrangement.   
+\subsubsection{Algorithm}
+The core LBM algorithm is a cyclic sequence of substeps, with each cycle corresponding to one time step. Figure \ref{fig:ffalgo} shows these substeps visually.
+\begin{enumerate}
+    \item Perform collision (relaxation) using (\ref{eq:3.15}). \par To avoid computing the terms $\left(1-\frac{\Delta t}{\tau}\right)$ and $\frac{\Delta t}{\tau}$ multiple times for each time step, we can define $\omega = \frac{\Delta t}{\tau}$ as part of the initialisation. Thus, we can remove the computationally expensive numerical division from the collision operation to give
+    \begin{equation}
+        f_k^*(\mathbf{x},t) = (1-\omega)f_k(\mathbf{x},t) + \omega f_k^{\mathrm{eq}}(\mathbf{x},t). \label{eq:3.17}
+    \end{equation}
+    \item Perform streaming (propagation) using (\ref{eq:3.16}). \par We need to make sure the streamed populations do not overwrite the unstreamed populations. This can be done by sweeping through the memory in a different direction for each discrete velocity. Figure \ref{fig:streamexp} gives the code that does this explicitly. However, the {\fontfamily{cmtt}\selectfont\textcolor{black}{numpy.roll}} Python function does this more efficiently and we will be using this function in our simulations.
+    \begin{figure}[!htb]{\small
+    \begin{mdframed}[backgroundcolor=red!10, linecolor=red!10]
+    \begin{minted}{python}
+        for k in range(ndir):
+            for i in range(nx):
+                for j in range(ny):
+                    xstreamed = (i + cx[k] + nx)%nx
+                    ystreamed = (j + cy[k] + ny)%ny
+                    fold[k, xstreamed, ystreamed] = f[k, i, j]
+    \end{minted}
+    \end{mdframed}
+    }
+    \caption[The streaming process written explicitly in Python]{The streaming process written explicitly in Python, noting that {\fontfamily{cmtt}\selectfont\textcolor{black}{fold}} represents $f_k$ and {\fontfamily{cmtt}\selectfont\textcolor{black}{f}} represents $f_k^*$.} \label{fig:streamexp}
+    \end{figure}
+
+    \item Compute the macroscopic moments $\rho(\mathbf{x},t)$ and $\mathbf{u}(\mathbf{x},t)$. \par We can do this from $f_k(\mathbf{x},t)$ using the moments of $f_k$ given by (\ref{eq:3.9}), as well as the explicit velocities given by Table \ref{table:d2q9}. This gives
+    \begin{subequations}
+        \begin{align}
+            \rho &= f_0 + f_1 + f_2 + f_3 + f_4 + f_5 + f_6 + f_7 + f_8, \label{eq:3.18a}\\
+            u_x &= \frac{1}{\rho}\left[f_1 + f_5 + f_8 - (f_2 + f_6 + f_7)\right], \label{eq:3.18b}\\
+            u_y &= \frac{1}{\rho}\left[f_3 + f_5 + f_6 - (f_4 + f_7 + f_8)\right]. \label{eq:3.18c}
+        \end{align}
+    \end{subequations}
+    \item Obtain the equilibrium distribution from (\ref{eq:3.12}). \par Similarly to Step 1, we can define a variable to compute $\frac{1}{c_s^2}$ and $\frac{1}{c_s^4}$ to avoid the computationally expensive numerical division that will be computed every time step. 
+    \item Increase the time step, setting $t$ to $t+\Delta t$, returning to step 1 until the last time step or convergence has been reached. 
+\end{enumerate}
+
+\begin{figure}[!htb]
+\centering
+\input{figures/lbm/ffalgo}
+\caption{An overview of a cycle of the force-free LB algorithm} \label{fig:ffalgo}
+\end{figure}
+\newpage
+\subsubsection{Chapman-Enskog Analysis}
+% \todo[inline, color=blue!20]{finish writing this out}
+To connect back to the continuity and Navier-Stokes equations for (pure) fluid flows, Chapman-Enskog analysis is used. We follow the work in Section 4.1 of \cite{lbtextbook}, where we have added the details ourselves.
+
+% An outline of the procedure is given by \cite{guo+zhao}, and I have given the details below using \cite{lbtextbook,mp}. For ease of notation, I will be omitting the angled brackets in this analysis for the velocity, equilibrium distribution function and distribution function. I will also omit the subscript $\beta$ from the fluid velocity associated with the $\beta$-phase to avoid confusion with the Greek letters used to indicate the Cartesian indices.
+
+First we express the moments of $f_k^{\mathrm{eq}}$, as given by equation (3.66) in \cite{lbtextbook}:
+\begin{subequations} \label{eq:3.19}
+\begin{align}
+    &\sum_k f_k^{\mathrm{eq}} = \rho, \label{eq:3.19a}\\
+    &\sum_k c_{k\alpha} f_k^{\mathrm{eq}} = \rho u_\alpha, \label{eq:3.19b}\\
+    &\sum_k c_{k\alpha} c_{k\gamma} f_k^{\mathrm{eq}} = c_s^2\rho\delta_{\alpha\gamma} +  \rho u_\alpha u_\gamma, \label{eq:3.19c}\\
+    &\sum_k c_{k\alpha} c_{k\gamma} c_{k\mu} f_k^{\mathrm{eq}} = c_s^2\rho \left(u_\alpha\delta_{\gamma\mu} + u_\gamma\delta_{\alpha\mu} + u_\mu\delta_{\alpha\gamma}\right),\label{eq:3.19d}
+\end{align}
+\end{subequations}
+where the Greek letters run from 1 to $n$, with $n$ being the number of dimensions. Our derivation is based on (\ref{eq:3.13}), and we first consider the Taylor expansion of the LHS of (\ref{eq:3.13}):
+\begin{align}
+    f_k(\mathbf{x} + \mathbf{c}_k\Delta t, t + \Delta t) =& \text{ } f_k(\mathbf{x},t) + \Delta t\left(\frac{\partial}{\partial t} + \mathbf{c}_k\cdot\nabla\right)f_k(\mathbf{x},t) \nonumber \\
+    &+ \frac{1}{2}(\Delta t)^2\left(\frac{\partial}{\partial t} + \mathbf{c}_k\cdot\nabla\right)^2 f_k(\mathbf{x},t) + O((\Delta t)^3). \label{eq:3.20}
+\end{align}
+Substituting this back into (\ref{eq:3.13}), we get
+\begin{equation}
+    \Delta t \left(\frac{\partial}{\partial t} + \mathbf{c}_k\cdot\nabla\right)f_k + \frac{1}{2}(\Delta t)^2\left(\frac{\partial}{\partial t} + \mathbf{c}_k\cdot\nabla\right)^2 f_k + O((\Delta t)^3) = -\frac{\Delta t}{\tau}(f_k - f_k^{\mathrm{eq}}). \label{eq:3.21}
+\end{equation}
+If we multiply (\ref{eq:3.21}) by $\frac{1}{2}\Delta t \left(\frac{\partial}{\partial t} + \mathbf{c}_k\cdot\nabla\right)$ and subtract it from (\ref{eq:3.21}), we have
+\begin{equation}
+    \Delta t \left(\frac{\partial}{\partial t} + \mathbf{c}_k\cdot\nabla\right)f_k = -\frac{\Delta t}{\tau}(f_k-f_k^{\mathrm{eq}}) + \frac{(\Delta t)^2}{2\tau}\left(\frac{\partial}{\partial t} + \mathbf{c}_k\cdot\nabla\right)(f_k-f_k^{\mathrm{eq}}). \label{eq:3.22}
+\end{equation}
+
+At its core, Chapman-Enskog analysis is a multi-scale expansion where $f_k$ is expressed as a perturbation expansion around the equilibrium distribution $f_k^{\mathrm{eq}}$:
+\begin{equation}
+    f_k = f_k^{\mathrm{eq}} + \lambda f_k^{(1)} + \lambda^2 f_k^{(2)} + O(\lambda^3), \label{eq:3.23}
+\end{equation}
+where $\lambda$ is a small parameter proportional to the ratio of the lattice spacing and a characteristic macroscopic length. Throughout this analysis, we will use the notation $f_k^{\mathrm{eq}} = f_k^{(0)}$ for consistency in the expansion. 
+
+We also introduce the following expansions for the time and spatial derivatives:
+\begin{equation}
+    \frac{\partial}{\partial t} \rightarrow \lambda \frac{\partial}{\partial t^{(1)}} + \lambda ^2 \frac{\partial}{\partial t^{(2)}} \quad \text{and} \quad %\frac{\partial}{\partial x_\alpha} \rightarrow \lambda \frac{\partial}{\partial x_\alpha ^{(1)}},
+    \mathbf{c}_k\cdot\nabla = c_{k\alpha}\frac{\partial}{\partial x_\alpha} \rightarrow \lambda\mathbf{c}_k\cdot\nabla^{(1)} = \lambda c_{k\alpha}\frac{\partial}{\partial x_\alpha^{(1)}}, \label{eq:3.24}
+\end{equation}
+where $t^{(1)}$ and $t^{(2)}$ are not considered time derivatives, but are terms of different orders of $\lambda$ that sum together to equal the time derivative. For notational simplicity, we will write $\partial_t^{(1)} = \frac{\partial}{\partial t^{(1)}}$, $\partial_t^{(2)} = \frac{\partial}{\partial t^{(2)}}$ and $\partial_\alpha^{(1)} = \frac{\partial}{\partial x_\alpha ^{(1)}}$.
+
+Applying the expansions (\ref{eq:3.23}) and (\ref{eq:3.24}) to second order, (\ref{eq:3.22}) becomes
+\begin{align}
+    &\Delta t \left( \lambda \partial_t^{(1)} + \lambda ^2 \partial_t^{(2)} + \lambda \mathbf{c}_k \cdot \nabla^{(1)}\right)\left( f_k^{(0)} + \lambda f_k^{(1)} + \lambda^2 f_k^{(2)}\right) \nonumber \\
+    &= -\frac{\Delta t}{\tau}\left(\lambda f_k^{(1)} + \lambda^2 f_k^{(2)}\right) + \frac{(\Delta t)^2}{2\tau}\left( \lambda \partial_t^{(1)} + \lambda ^2 \partial_t^{(2)} + \lambda \mathbf{c}_k \cdot \nabla^{(1)}\right)\left(\lambda f_k^{(1)} + \lambda^2 f_k^{(2)}\right). \label{eq:3.25}
+\end{align}
+Collecting terms of different order in $\lambda$, we find
+\begin{subequations}
+\begin{align}
+&O(\lambda^1): &\left(\partial_t^{(1)} + \mathbf{c}_k\cdot\nabla^{(1)}\right)f_k^{(0)} = -\frac{1}{\tau}f_k^{(1)},& \label{eq:3.26a}\\
+&O(\lambda^2): &\partial_t^{(2)}f_k^{(0)} + \left(1-\frac{\Delta t}{2\tau}\right)\left(\partial_t^{(1)} + \mathbf{c}_k\cdot\nabla^{(1)}\right)f_k^{(1)} = -\frac{1}{\tau}f_k^{(2)}. \label{eq:3.26b}&
+\end{align}
+\end{subequations}\label{eq:3.26}
+From (\ref{eq:3.9}), (\ref{eq:3.19}) and using the expansion (\ref{eq:3.23}), we can see that
+\begin{subequations} \label{eq:3.27}
+\begin{align}
+    \sum_k f_k^{(j)} &= 0 \quad \forall j \geq 1, \label{eq:3.27a}\\
+    \sum_k \mathbf{c}_k f_k^{(j)} &= \mathbf{0} \quad \forall j \geq 1. \label{eq:3.27b}
+\end{align}
+\end{subequations}
+Next, we take the zeroth, first and second moments of (\ref{eq:3.26a}) to get
+\begin{subequations}
+\begin{align}
+&0\text{th moment}: & \sum_k\left(\partial_t^{(1)} + \mathbf{c}_k\cdot\nabla^{(1)}\right)f_k^{(0)} &= {-\frac{1}{\tau}\sum_kf_k^{(1)}},& \label{eq:3.28a}\\
+% &&\implies \partial_t^{(1)}\rho + \nabla^{(1)}\cdot(\rho\mathbf{u}) = 0,& \\
+&1\text{st moment}: &\sum_k\mathbf{c}_k\left(\partial_t^{(1)} + \mathbf{c}_k\cdot\nabla^{(1)}\right)f_k^{(0)} &= {-\frac{1}{\tau}\sum_k\mathbf{c}_kf_k^{(1)}},& \label{eq:3.28b}\\
+% &&\implies \partial_t^{(1)}(\rho\mathbf{u}) + \nabla^{(1)}\cdot(\rho\mathbf{u}\mathbf{u} + \rho c_s^2 \mathbf{I}) = 0,& \\
+&2\text{nd moment}: &\sum_k\mathbf{c}_k\mathbf{c}_k\left(\partial_t^{(1)} + \mathbf{c}_k\cdot\nabla^{(1)}\right)f_k^{(0)} &= -\frac{1}{\tau}\sum_k\mathbf{c}_k\mathbf{c}_kf_k^{(1)}.& \label{eq:3.28c}
+\end{align}
+\end{subequations}
+Using (\ref{eq:3.19}) and (\ref{eq:3.27}), we can simplify (\ref{eq:3.28a}) and (\ref{eq:3.28b}) to get
+\begin{subequations} \label{eq:3.29}
+\begin{align}
+\frac{\partial}{\partial t^{(1)}}\rho + \nabla^{(1)}\cdot(\rho\mathbf{u}) &= 0, \label{eq:3.29a}\\
+\frac{\partial}{\partial t^{(1)}}(\rho\mathbf{u}) + \nabla^{(1)}\cdot\left( \rho\mathbf{u}\mathbf{u} + \rho c_s^2 \mathbf{I}\right) &= 0. \label{eq:3.29b}
+\end{align}
+\end{subequations}
+Here, (\ref{eq:3.29}) represent the $O(\lambda^1)$ continuity and momentum equations, where $\mathbf{I}$ is the identity matrix. We can see that the continuity equation is exact, but we can correct the $O(\lambda^1)$ momentum equation further using the zeroth and first moments of (\ref{eq:3.26b}), which are given by
+\begin{subequations} \label{eq:3.30}
+\begin{align}
+&0\text{th moment}: & \sum_k\left[\partial_t^{(2)}f_k^{(0)} + \left(1-\frac{\Delta t}{2\tau}\right)\sum_k\left(\partial_t^{(1)} + \mathbf{c}_k\cdot\nabla^{(1)}\right)f_k^{(1)}\right] &= {-\frac{1}{\tau}\sum_kf_k^{(2)}},& \label{eq:3.30a} \\
+% &&\implies \partial_t^{(2)}\rho = 0,& \\
+&1\text{st moment}: &\sum_k\mathbf{c}_k\left[\partial_t^{(2)}f_k^{(0)} + \left(1-\frac{\Delta t}{2\tau}\right)\sum_k\left(\partial_t^{(1)} + \mathbf{c}_k\cdot\nabla^{(1)}\right)f_k^{(1)}\right] &= -\frac{1}{\tau}\sum_k\mathbf{c}_kf_k^{(2)}.& \label{eq:3.30b}
+% &&\implies \partial_t^{(1)}(\rho\mathbf{u}) + \nabla^{(1)}\cdot(\rho\mathbf{u}\mathbf{u} + \rho c_s^2 \mathbf{I}) = 0,&
+\end{align}
+\end{subequations}
+Again, we can simplify (\ref{eq:3.30}) using (\ref{eq:3.19}) and (\ref{eq:3.27}) to get
+\begin{subequations} \label{eq:3.31}
+\begin{align}
+\frac{\partial}{\partial t^{(2)}}\rho &= 0, \label{eq:3.31a}\\
+\frac{\partial}{\partial t^{(2)}}(\rho\mathbf{u}) + \left(1-\frac{\Delta t}{2\tau}\right)\nabla^{(1)}\cdot\sum_k\mathbf{c}_k\mathbf{c}_kf_k^{(1)} &= 0.\label{eq:3.31b}
+\end{align}
+\end{subequations}
+Now, we combine (\ref{eq:3.29}) and (\ref{eq:3.31}) to find
+\begin{subequations} \label{eq:3.32}
+\begin{align}
+\left(\lambda \partial_t^{(1)} + \lambda^2 \partial_t^{(2)}\right)\rho + \lambda\nabla^{(1)}\cdot(\rho\mathbf{u}) &= 0, \label{eq:3.32a}\\
+\left(\lambda \partial_t^{(1)} + \lambda^2 \partial_t^{(2)}\right)(\rho\mathbf{u}) + \lambda\nabla^{(1)}\cdot\left( \rho\mathbf{u}\mathbf{u} + \rho c_s^2 \mathbf{I}\right) &= -\lambda^2\left(1-\frac{\Delta t}{2\tau}\right)\nabla^{(1)}\cdot\sum_k\mathbf{c}_k\mathbf{c}_kf_k^{(1)}. \label{eq:3.32b}
+\end{align}
+\end{subequations}
+% \todo[inline, color=blue!20]{change indices to and make sure they match!}
+When the expansion given by (\ref{eq:3.24}) is reversed, (\ref{eq:3.32a}) gives the mass continuity equation, but to show that (\ref{eq:3.32b}) gives the Navier-Stokes equation, we need to find an expression for the perturbation moment $\sum_k\mathbf{c}_k\mathbf{c}_kf_k^{(1)}$. To do this, we use the moments given by (\ref{eq:3.19}) and the 2nd moment of the $O(\lambda^1)$ equation given by (\ref{eq:3.28c}). Rearranging (\ref{eq:3.28c}) and using index notation, we have
+\begin{equation}
+    \sum_kc_{k\alpha}c_{k\gamma}f_k^{(1)} = -\tau\left[\partial_t^{(1)}\sum_kc_{k\alpha}c_{k\gamma}f_k^{(0)} + \partial_\mu^{(1)}\sum_kc_{k\alpha}c_{k\gamma}c_{k\mu}f_k^{(0)}\right]. \label{eq:3.33}
+\end{equation}
+As before, the Greek letters run from 1 to $n$. The second term on the RHS can be expressed using (\ref{eq:3.19d}) as
+\begin{align}
+    \partial_\mu^{(1)}\sum_kc_{k\alpha}c_{k\gamma}c_{k\mu}f_k^{(0)} &= \partial_\mu^{(1)}\left(\rho c_s^2\left[u_\alpha\delta_{\gamma\mu} + u_\gamma\delta_{\alpha\mu} + u_\mu\delta_{\alpha\gamma}\right]\right) \nonumber \\
+    &= c_s^2\left[\partial_\gamma^{(1)}(\rho u_\alpha) + \partial_\alpha^{(1)}(\rho u_\gamma)\right] + c_s^2\delta_{\alpha\gamma}\partial_\mu^{(1)}(\rho u_\mu). \label{eq:3.34}
+\end{align}
+The first term, however, requires the elimination of the time derivatives, and we rewrite (\ref{eq:3.29}) in index notation to give
+\begin{subequations} \label{eq:3.35}
+\begin{align}
+    \partial_t^{(1)}(\rho) &= -\partial_\mu^{(1)}(\rho u_\mu), \label{eq:3.35a} \\
+    \partial_t^{(1)}(\rho u_\alpha) &= -\partial_\mu^{(1)}\left( \rho u_\alpha u_\mu + \rho c_s^2 \delta_{\alpha\mu}\right). \label{eq:3.35b}
+\end{align}
+\end{subequations}
+Then we can use (\ref{eq:3.19c}) and the product rule to write the first term on the RHS of (\ref{eq:3.33}) as
+\begin{subequations} \label{eq:3.36}
+\begin{align}
+    \partial_t^{(1)}\sum_kc_{k\alpha}c_{k\gamma}f_k^{(0)} =& \text{ }\partial_t^{(1)}\left( \rho u_\alpha u_\gamma + c_s^2\rho\delta_{\alpha\gamma}\right) \nonumber \\
+    =&  \text{ }\left[\partial_t^{(1)}(\rho) u_\alpha u_\gamma + \rho \partial_t^{(1)}(u_\alpha) u_\gamma + \rho u_\alpha \partial_t^{(1)} (u_\gamma)\right] + c_s^2 \delta_{\alpha\gamma} \partial_t^{(1)}\rho \nonumber \\
+    =& \text{ }\left[u_\alpha\left(\partial_t^{(1)}(\rho) u_\gamma + \rho \partial_t^{(1)} (u_\gamma)\right) + u_\gamma\left(\partial_t^{(1)}(\rho) u_\alpha + \rho \partial_t^{(1)}(u_\alpha)\right) - u_\alpha u_\gamma \partial_t^{(1)}\rho \right] \nonumber \\ 
+    &+ c_s^2 \delta_{\alpha\gamma} \partial_t^{(1)}\rho \nonumber \\
+    =&  \text{ }\left[u_\alpha \partial_t^{(1)}(\rho u_\gamma) + u_\gamma \partial_t^{(1)}(\rho u_\alpha) - u_\alpha u_\gamma \partial_t^{(1)}\rho \right] + c_s^2 \delta_{\alpha\gamma} \partial_t^{(1)}\rho. \label{eq:3.36a}
+\end{align}
+Substituting (\ref{eq:3.35}) into (\ref{eq:3.36a}), we get %and using the product rule, we can eliminate the time derivatives to get
+\begin{align}
+    % &\partial_t^{(1)}\sum_kc_{k\alpha}c_{k\gamma}f_k^{(0)} \nonumber \\
+    \partial_t^{(1)}\sum_kc_{k\alpha}c_{k\gamma}f_k^{(0)} =& \text{ } \left[-u_\alpha \partial_\mu^{(1)}\left( \rho u_\gamma u_\mu + \rho c_s^2\delta_{\gamma\mu}\right) - u_\gamma \partial_\mu^{(1)}\left( \rho u_\alpha u_\mu + \rho c_s^2\delta_{\alpha\mu}\right) + u_\alpha u_\gamma \partial_\mu^{(1)}(\rho u_\mu) \right]\nonumber \\
+    & - c_s^2\delta_{\alpha\gamma}\partial_\mu^{(1)}(\rho u_\mu). \label{eq:3.36c}
+\end{align}
+Using the product rule, notice that
+\begin{align*}
+    u_\alpha\partial_\mu^{(1)}\left(\rho u_\gamma u_\mu\right) + u_\gamma\partial_\mu^{(1)}\left(\rho u_\alpha u_\mu\right) =& \text{ } 2\partial_\mu^{(1)}(\rho)u_\alpha u_\gamma u_\mu + \rho\partial_\mu^{(1)}(u_\alpha)u_\gamma u_\mu \\
+    &+ \rho\partial_\mu^{(1)}(u_\gamma)u_\alpha u_\mu + 2\rho\partial_\mu^{(1)}(u_\mu)u_\alpha u_\gamma \\
+    % \implies u_\alpha\partial_\mu^{(1)}\left(\rho u_\gamma u_\mu\right) + u_\gamma\partial_\mu^{(1)}\left(\rho u_\alpha u_\mu\right) 
+    =& \text{ } \partial_\mu^{(1)}(\rho u_\alpha u_\gamma u_\mu) + \partial_\mu^{(1)}(\rho) u_\alpha u_\gamma u_\mu + \rho\partial_\mu^{(1)}(u_\mu)u_\alpha u_\gamma. 
+\end{align*}
+We can use this in (\ref{eq:3.36c}) to get
+\begin{align}
+    \partial_t^{(1)}\sum_kc_{k\alpha}c_{k\gamma}f_k^{(0)}=& \text{ } -\partial_\mu^{(1)}(\rho u_\alpha u_\gamma u_\mu) - \partial_\mu^{(1)}(\rho)u_\alpha u_\gamma u_\mu - \partial_\mu^{(1)}(u_\mu)\rho u_\alpha u_\gamma + u_\alpha u_\gamma \partial_\mu^{(1)}(\rho u_\mu) \nonumber \\
+    &- c_s^2\left[u_\alpha\partial_\gamma^{(1)}\rho + u_\gamma\partial_\alpha^{(1)}\rho\right] - c_s^2\delta_{\alpha\gamma}\partial_\mu^{(1)}(\rho u_\mu) \nonumber \\
+    =& \text{ } -\partial_\mu^{(1)}(\rho u_\alpha u_\gamma u_\mu) - c_s^2\left[u_\alpha\partial_\gamma^{(1)}\rho + u_\gamma\partial_\alpha^{(1)}\rho\right] - c_s^2\delta_{\alpha\gamma}\partial_\mu^{(1)}(\rho u_\mu). \label{eq:3.36b}
+\end{align}
+\end{subequations}
+Now we can substitute (\ref{eq:3.34}) and (\ref{eq:3.36b}) into (\ref{eq:3.33}) to get
+\begin{align}
+    \sum_kc_{k\alpha}c_{k\gamma}f_k^{(1)} =& \text{ } -\tau c_s^2\left[\partial_\gamma^{(1)}(\rho u_\alpha) + \partial_\alpha^{(1)}(\rho u_\gamma) + \delta_{\alpha\gamma}\partial_\mu^{(1)}(\rho u_\mu)\right] \nonumber \\
+    & + \tau c_s^2 \left[\frac{1}{c_s^2}\partial_\mu^{(1)}(\rho u_\alpha u_\gamma u_\mu) + u_\alpha\partial_\gamma^{(1)}\rho + u_\gamma\partial_\alpha^{(1)}\rho + \delta_{\alpha\gamma}\partial_\mu^{(1)}(\rho u_\mu) \right] \nonumber \\
+    =& \text{ } \tau\partial_\mu^{(1)}(\rho u_\alpha u_\gamma u_\mu) -\tau c_s^2 \left[\rho\partial_\alpha^{(1)}(u_\gamma) + \rho\partial_\gamma^{(1)}(u_\alpha) \right], \label{eq:3.37}\\
+    \implies \sum_k \mathbf{c}_k \mathbf{c}_kf_k^{(1)} &= \tau\left(\nabla^{(1)}\cdot(\rho\mathbf{uuu})-\rho c_s^2\left[\nabla^{(1)}\mathbf{u} + (\nabla^{(1)}\mathbf{u})^\intercal\right]\right). \label{eq:3.38}
+\end{align}
+The term $\nabla^{(1)}\cdot(\rho\mathbf{uuu})$ is an error term which can be neglected, and therefore, substituting (\ref{eq:3.38}) into (\ref{eq:3.32b}), we get
+\begin{equation}
+    \left(\lambda \partial_t^{(1)} + \lambda^2 \partial_t^{(2)}\right)(\rho\mathbf{u}) + \lambda\nabla^{(1)}\cdot\left( \rho\mathbf{u}\mathbf{u} + \rho c_s^2 \mathbf{I}\right) = -\lambda^2\left(\tau-\frac{\Delta t}{2}\right)\nabla^{(1)}\cdot\rho c_s^2\left[\nabla^{(1)}\mathbf{u} + (\nabla^{(1)}\mathbf{u})^\intercal\right]. \label{eq:3.39}
+\end{equation}
+Reversing the expansion (\ref{eq:3.24}), using the equation of state $p=\rho c_s^2$ and assuming incompressibility ($\nabla\cdot\mathbf{u}=0$), (\ref{eq:3.39}) becomes
+\begin{equation}
+    \frac{\partial\mathbf{u}}{\partial t} + \mathbf{u}\cdot\nabla\mathbf{u} = -\frac{1}{\rho}\nabla p + \nu\nabla^2\mathbf{u}, \label{eq:3.40}
+\end{equation}
+where $\nu$ is given by
+\begin{equation}
+    \nu = c_s^2\left(\tau-\frac{\Delta t}{2}\right). \label{eq:3.41}
+\end{equation}
+
+\subsection{Adaptation to Porous Media}
+In order to adapt the LBM for porous media, we use the model presented by Guo \& Zhao in \cite{guo+zhao}, where we introduce porosity into the equation for the equilibrium distribution $f^{\mathrm{eq}}$. We will temporarily neglect the effects of the linear and non-linear drags to only consider the force-free lattice Boltzmann equation for the volume-averaged distribution function $\langle f_k(\mathbf{x},t) \rangle$ and equilibrium distribution function $\langle f_k^{\mathrm{eq}}(\mathbf{x},t) \rangle$. Our lattice Boltzmann equation is therefore
+\begin{equation}
+    \langle f_k(\mathbf{x} + \mathbf{c}_k\Delta t,t + \Delta t) \rangle = \langle f_k(\mathbf{x},t) \rangle - \frac{\langle f_k(\mathbf{x},t) \rangle - \langle f_k^{\mathrm{eq}}(\mathbf{x},t) \rangle}{\tau}\Delta t, \label{eq:3.42}
+\end{equation}
+where $\langle f_k^{\mathrm{eq}}(\mathbf{x},t) \rangle$ is given by equation (10) in \cite{guo+zhao}:
+\begin{equation}
+    \langle f_k^{\mathrm{eq}}(\mathbf{x},t) \rangle = w_k\rho\left[1 + \frac{\mathbf{c}_k\cdot\langle\mathbf{u}_\beta\rangle}{c_s^2} + \frac{\left(\mathbf{c}_k\cdot\langle\mathbf{u}_\beta\rangle\right)^2}{2\varepsilon_\beta c_s^4} - \frac{\langle\mathbf{u}_\beta\rangle\cdot\langle\mathbf{u}_\beta\rangle}{2\varepsilon_\beta c_s^2}\right]. \label{eq:3.43}
+\end{equation}
+
+As in the standard LBM, the mass and momentum density can be found through the moments of $\langle f_k \rangle$:
+\begin{subequations} \label{eq:3.44}
+\begin{align}
+    \rho = \sum_k\langle f_k\rangle, \label{eq:3.44a} \\
+    \rho\langle\mathbf{u}_\beta\rangle = \sum_k\mathbf{c}_k\langle f_k\rangle. \label{eq:3.44b}
+\end{align}
+\end{subequations}
+
+
+\section{Boundary and Initial Conditions} \label{sec:3.3}
+% \todo[inline,color=blue!20]{talk about porous medium LBM before boundary conditions}
+So far, we have stated that fluid flow through porous media is governed by (\ref{eq:2.7}) and (\ref{eq:2.22}), but our problem is ill-posed as we have only specified homogeneous initial conditions, without any boundary conditions. The specification of these conditions is essential to uniquely determine the solutions to the particular flows we are interested in.
+
+To do this, we propagate the populations at the boundaries according to the local boundary conditions after the streaming step, as shown by Figure \ref{fig:bcalgo}.
+% In order to uniquely determine the solutions to the flow we are interested in, we have to
+% Hydrodynamics theory is governed by a set of partial differential equations (PDEs), as given by (\ref{eq:2.11}) and (2.35)\todo{the NSE, need to sort out the closure model bit), the solutions of which cannot be uniquely determined unless we have specified the boundary and initial conditions. Otherwise, our problem is incomplete as we do not have information about the particular flow that we are interested in. 
+
+\begin{figure}[!htb]
+\centering
+\input{figures/lbm/bcalgo}
+\caption{An overview of a cycle of the force-free LB algorithm including boundary conditions} \label{fig:bcalgo}
+\end{figure}
+
+We also apply the boundary conditions to the mesoscopic populations $f_k$, rather than the macroscopic variables $\rho$ and $\mathbf{u}$. This also gives rise to a number of boundary schemes in which we can implement these boundary conditions. These schemes can be applied to pure fluid flows as well as flows through porous media. As such, we omit the angled brackets from the (equilibrium) distribution functions and velocities.
+
+In this project, we will implement 
+\begin{itemize}
+    \item periodic boundary conditions,
+    \item the \emph{half-way bounce-back scheme} corresponding to a no-slip boundary condition, and
+    \item the Zou \& He boundary conditions corresponding to non-homogeneous Dirichlet boundary conditions. These are also known as the \emph{non-equilibrium bounce-back method}.
+\end{itemize}
+Other methods, such as the \emph{wet-node approach} are detailed in Section 5.3 of \cite{lbtextbook}.
+
+\subsection{Initial Conditions}
+To obtain a steady-state solution, we set the initial populations equal to the equilibrium population: $f_k(\mathbf{x},t=0) = f_k^{\mathrm{eq}}(\rho(\mathbf{x},t=0),\mathbf{u}(\mathbf{x},t=0))$. For homogeneous initial conditions, we will choose $\rho(\mathbf{x},t=0)=1$ and $\mathbf{u}(\mathbf{x},t=0)=\mathbf{0}$, both of which are given in lattice units, but we may also specify an initial velocity field $\mathbf{u}(\mathbf{x},t=0)=\mathbf{u}_0(\mathbf{x})$.
+\newpage
+\subsection{Periodic Boundary Conditions}
+Periodic boundary conditions are one of the most common boundary conditions, which we can use to isolate a repeating flow pattern within the flow system. Essentially, fluid that leaves the domain on one side will instantaneously re-enter at the opposite side. 
+\begin{figure}[!htb]
+    \centering
+    \input{figures/lbm/bbchannel}
+\caption[Sketch of the periodic boundary condition]{Sketch of the periodic boundary condition (inspired by Figure 5.9 of \cite{lbtextbook}), where the \textcolor{red}{red} arrows show the boundary condition at the inlet and the \textcolor{blue}{blue} arrows show the boundary condition at the outlet} \label{fig:bbchannel}
+\end{figure}
+
+For a domain of length $L$ with the flow being periodic in the $x$-direction, this corresponds to the macroscopic boundary conditions:
+\begin{equation}
+    \rho(x, y, t) = \rho(x+L, y, t) \quad \text{and} \quad \mathbf{u}(x, y, t) = \mathbf{u}(x+L, y, t). \label{eq:3.45}
+\end{equation}
+These boundary conditions conserve mass and momentum at all times. Therefore, a flow can only survive over time if there is an external source of momentum, such as an external body force. 
+
+During streaming, if we have a periodic flow condition along the $x$-axis for the 2D flow problem, the unknown incoming populations $f_k^*$ on one side are given by those leaving the domain on the opposite side. We can see this in Figure \ref{fig:bbchannel}. In particular, at the inlet, we have
+% \begin{equation}
+%     f_k^*(x,y,t) = f_k^*(x+L, y, t). 
+% \end{equation}
+\begin{subequations} \label{eq:3.46}
+\begin{align}
+    f_k^*(x,y,t) = f_k^*(x+L, y, t) \implies
+    \begin{cases}
+    f_1^*(x_1, y, t + \Delta t) = f_1^*(x_{n_x}, y, t), \\
+    f_5^*(x_1, y, t + \Delta t) = f_5^*(x_{n_x}, y, t), \\
+    f_8^*(x_1, y, t + \Delta t) = f_8^*(x_{n_x}, y, t),
+    \end{cases} \label{eq:3.46a}
+\end{align}
+and at the outlet, we have
+\begin{align}
+    f_k^*(x+L,y,t) = f_k^*(x, y, t) \implies
+    \begin{cases}
+    f_2^*(x_{n_x}, y, t + \Delta t) = f_2^*(x_1, y, t), \\
+    f_6^*(x_{n_x}, y, t + \Delta t) = f_6^*(x_1, y, t), \\
+    f_7^*(x_{n_x}, y, t + \Delta t) = f_7^*(x_1, y, t).
+    \end{cases} \label{eq:3.46b}
+\end{align}
+\end{subequations}
+% where $n_x$ is the number of nodes in the $x$-direction. 
+Here, we consider the opposite periodic edges of the flow domain to be attached together, and as a result, we can implement the boundary conditions as a step in the streaming process. Computationally, the {\fontfamily{cmtt}\selectfont\textcolor{black}{numpy.roll}} Python function implements the periodic boundary conditions by default.
+
+From Figure \ref{fig:bbchannel}, we can also see that the edges of the simulated system lie half-way between the starting node of one period, and the end node of another, with $x_{\text{inlet}} = x_1 - \Delta x/2$ and $x_{\text{outlet}} = x_{n_x} + \Delta x/2$.
+
+% We also define the ``virtual" nodes $x_0$ and $x_{n_x+1}$ to be $x_0 = x_1 - \Delta x$ and $x_{n_x+1} = x_{n_x} + \Delta x$. These are a layer of nodes before and after the periodic boundaries that are used for computational convenience rather than being part of the physical system. Then, the edges of the simulated system are actually half-way between the nodes of the physical system and these ``virtual" nodes at $x_{\text{inlet}} = x_1 - \Delta x/2$ and $x_{\text{outlet}} = x_{n_x} + \Delta x/2$.
+
+
+\subsection{Half-way Bounce-back Method}
+In fluid dynamics, the no-slip boundary condition assumes that a viscous fluid has zero velocity at the boundary \cite[Section 6.4]{fmnotes}. One of the most widely used schemes to model this is the bounce-back, adopted from earlier lattice gas models. This is a simple scheme to implement: fundamentally, populations hitting a rigid wall during the streaming process are reflected back to where they originally came from. This reverses the direction of the momentum of $f_k$ before and after its collision, which means the macroscopic velocity at the solid boundary is zero.
+
+% The no-slip boundary condition is a popular choice 
+% To model confined fluid flow and other problems involving solid boundaries, we implement the bounce-back method, which was adopted from earlier lattice gas models. Its simplicity of implementation makes it a popular scheme to use for implementing the no-slip velocity c
+% In hydrodynamics, the most common fluid-solid interface condition is the no-slip velocity boundary condition, which is used to model confined fluid flow and other problems involving solid boundaries. The oldest LB boundary condition to model walls is the bounce-back method, which was adopted from the earlier lattice gas models. 
+
+In this project, we use the half-way bounce-back scheme, which is a method of second-order accuracy in the expansion parameter $\lambda$, and which requires $\Delta t$ time to return the particle distribution's information back to the node. We also define the fluid nodes closest to the boundary as \textbf{boundary nodes}. As shown in Figure \ref{fig:hwbb}, the boundary wall is placed at a distance $\Delta y/2$ from the boundary nodes.
+
+\begin{figure}[!htb]
+    \centering
+    \input{figures/lbm/hwbb}
+\caption[Sketch of the half-way bounce-back scheme at the bottom wall]{Sketch of the half-way bounce-back scheme at the bottom wall inspired by Figure 3.5 in \cite{mp}, with the bounced particle distributions depicted with \textcolor{red}{red}, \textcolor{green01270}{green} and \textcolor{orange}{orange} arrows. The \textcolor{blue}{blue} and black arrows represent the streaming process.} \label{fig:hwbb}
+\end{figure}
+
+In the case of a stationary wall, populations that leave the boundary nodes at time $t$ meet the boundary wall at time $t+\frac{\Delta t}{2}$, where they are reflected back with a velocity $\mathbf{c}_{k'} = -\mathbf{c}_k$, arriving back at the same boundary node at time $t+\Delta t$. Mathematically, this is expressed as
+\begin{equation}
+    f_{k'}(\mathbf{x}_\mathrm{b}, t+\Delta t) = f_k^*(\mathbf{x}_\mathrm{b},t), \label{eq:3.47}
+\end{equation}
+where $\mathbf{x}_\mathrm{b}$ is a boundary node and $k'$ represents the direction that is opposite $k$-th direction. This equation replaces the streaming step for these populations. The opposite directions are given explicitly in Table \ref{table:d2q9}. 
+
+\begin{figure}[!htb]
+    \centering
+    \input{figures/lbm/nebb}
+    \caption[Distribution functions on boundaries]{Distribution functions on boundaries - the black arrows indicate the known distribution functions and the \textcolor{red}{red} arrows indicate the unknown distribution functions that can be found using a boundary condition scheme \cite[Figure 3.6]{mp}.}
+    \label{fig:nebb}
+\end{figure}
+
+We can also use Figure \ref{fig:nebb} to identify the unknown distribution functions on each wall, and therefore find the boundary conditions on $f_k$ for each wall. 
+% \begin{figure}[!htb]
+%     \centering
+%     \input{figures/lbm/nebb}
+%     \caption[Distribution functions on boundaries]{Distribution functions on boundaries - the black arrows indicate the known distribution functions and the \textcolor{red}{red} arrows indicate the unknown distribution functions that can be found using a boundary condition scheme \cite[Figure 3.6]{mp}.}
+%     \label{fig:nebb}
+% \end{figure}
+\begin{subequations} \label{eq:3.48}
+\subsubsection*{Bottom Boundary}
+\vspace{-5mm}
+\begin{align}
+    f_3(x, y_1, t+\Delta t) &= f_4^*(x, y_1, t), \nonumber \\
+    f_5(x, y_1, t+\Delta t) &= f_7^*(x, y_1, t), \label{eq:3.48a}\\ 
+    f_6(x, y_1, t+\Delta t) &= f_8^*(x, y_1, t), \nonumber
+\end{align}
+\subsubsection*{Top Boundary}
+\vspace{-5mm}
+\begin{align}
+    f_4(x, y_{n_y}, t+\Delta t) &= f_3^*(x, y_{n_y}, t), \nonumber \\
+    f_7(x, y_{n_y}, t+\Delta t) &= f_5^*(x, y_{n_y}, t), \label{eq:3.48b}\\
+    f_8(x, y_{n_y}, t+\Delta t) &= f_6^*(x, y_{n_y}, t). \nonumber
+\end{align}
+\subsubsection*{Left Boundary}
+\vspace{-5mm}
+\begin{align}
+    f_1(x_1, y, t+\Delta t) &= f_2^*(x_1, y, t), \nonumber \\
+    f_5(x_1, y, t+\Delta t) &= f_7^*(x_1, y, t), \label{eq:3.48c}\\
+    f_8(x_1, y, t+\Delta t) &= f_6^*(x_1, y, t). \nonumber
+\end{align}
+\subsubsection*{Right Boundary}
+\vspace{-5mm}
+\begin{align}
+    f_2(x_{n_x}, y, t+\Delta t) &= f_1^*(x_{n_x}, y, t), \nonumber \\
+    f_6(x_{n_x}, y, t+\Delta t) &= f_8^*(x_{n_x}, y, t), \label{eq:3.48d}\\
+    f_7(x_{n_x}, y, t+\Delta t) &= f_5^*(x_{n_x}, y, t). \nonumber
+\end{align}
+\end{subequations}
+
+\subsection{Zou \& He Velocity Boundary Conditions (Non-Equilibrium Bounce-back Method)}
+To satisfy the macroscopic non-homogeneous Dirichlet boundary condition $\mathbf{u}(\mathbf{x}_\mathrm{b},t) = \mathbf{u}_\mathrm{b}$, we use a boundary condition developed by Zou \& He \cite{Zou_1997}. This method is formally third-order accurate, which is justified using Chapman-Enskog analysis, as given by Section 5.4.1.2 in \cite{lbtextbook}. In this subsection, we will derive the conditions for the bottom boundary following the method outlined in Section 3.3.3 in \cite{mp}, and a similar method can be used to derive the conditions for the other boundaries, as shown in Appendix \ref{appendix:a}.
+
+We will first assume the fluid velocity is known on the bottom wall of the computation domain: $\mathbf{u}_{\mathrm{b,S}} = (u_{\mathrm{S},x}, u_{\mathrm{S},y})$. From Figure \ref{fig:nebb}, we can see that the unknown distribution functions are $f_3$, $f_5$ and $f_6$. We also need to determine the fluid density at the boundary. From equations (\ref{eq:3.9}), we have
+\begin{subequations} \label{eq:3.49}
+\begin{align}
+    \rho(\mathbf{x},t) = \sum_k f_k(\mathbf{x},t) \implies &\rho_\mathrm{S} = f_0 + f_1 + f_2 + f_3 + f_4 + f_5 + f_6 + f_7 + f_8, \label{eq:3.49a} \\
+    \rho u_x(\mathbf{x},t) = \sum_k \mathbf{c}_{k,x} f_k(\mathbf{x},t) \implies &\rho_\mathrm{S} u_{\mathrm{S},x} = f_1 - f_2 + f_5 - f_6 - f_7 + f_8, \label{eq:3.49b} \\
+    \rho u_y(\mathbf{x},t) = \sum_k \mathbf{c}_{k,y} f_k(\mathbf{x},t) \implies &\rho_\mathrm{S} u_{\mathrm{S},y} = f_3 - f_4 + f_5 + f_6 - f_7 - f_8. \label{eq:3.49c}
+\end{align}
+\end{subequations}
+% \newpage 
+Clearly, this system is not closed as we have 3 equations for 4 unknowns, the 4th being the density at the wall. To provide values for the unknown populations, Zou \& He proposed enforcing a bounce-back rule on the non-equilibrium part normal to the boundary, that is:
+\begin{equation}
+    f_3 - f_3^{\mathrm{eq}} = f_4 - f_4^{\mathrm{eq}}. \label{eq:3.50}
+\end{equation}
+Using (\ref{eq:3.12}) and the explicit direction vectors given by Table \ref{table:d2q9}, we can write
+\begin{subequations} \label{eq:3.51}
+\begin{align}
+    f_3^{\mathrm{eq}} &= \frac{1}{9}\rho_\mathrm{S} \left(1 + \frac{\mathbf{u}_{\mathrm{b,S}}\cdot\mathbf{c}_3}{c_s^2} + \frac{\left(\mathbf{u}_{\mathrm{b,S}}\cdot\mathbf{c}_3\right)^2}{2c_s^4} - \frac{\left(\mathbf{u}_{\mathrm{b,S}}\cdot\mathbf{u}_{\mathrm{b,S}}\right)^2}{2c_s^2}\right) \nonumber \\
+    &= \frac{1}{9}\rho_\mathrm{S} \left( 1 + \frac{u_{\mathrm{S},y}}{c_s^2} + \frac{u_{\mathrm{S},y}^2}{2c_s^4} - \frac{u_{\mathrm{S},x}^2 + u_{\mathrm{S},y}^2}{2c_s^2} \right), \label{eq:3.51a}\\
+    f_4^{\mathrm{eq}} &= \frac{1}{9}\rho_\mathrm{S} \left(1 + \frac{\mathbf{u}_{\mathrm{b,S}}\cdot\mathbf{c}_4}{c_s^2} + \frac{\left(\mathbf{u}_{\mathrm{b,S}}\cdot\mathbf{c}_4\right)^2}{2c_s^4} - \frac{\left(\mathbf{u}_{\mathrm{b,S}}\cdot\mathbf{u}_{\mathrm{b,S}}\right)^2}{2c_s^2}\right) \nonumber \\ 
+    &= \frac{1}{9}\rho_\mathrm{S} \left( 1 - \frac{u_{\mathrm{S},y}}{c_s^2} + \frac{u_{\mathrm{S},y}^2}{2c_s^4} - \frac{u_{\mathrm{S},x}^2 + u_{\mathrm{S},y}^2}{2c_s^2} \right). \label{eq:3.51b}
+\end{align}
+\end{subequations}
+Note that (\ref{eq:3.43}) could also have been used to write $f_k^{\mathrm{eq}}$ explicitly, as the term including the porosity $\varepsilon_\beta$ is cancelled when $f_4^{\mathrm{eq}}$ is subtracted from $f_3^{\mathrm{eq}}$. Substituting (\ref{eq:3.51}) back into (\ref{eq:3.49c}) gives
+\begin{subequations} \label{eq:3.52}
+\begin{align}
+    f_3 &= f_4 + \frac{1}{9}\rho_\mathrm{S}\left(\frac{2u_{\mathrm{S},y}}{c_s^2}\right) \nonumber \\ 
+    &= f_4 + \frac{2}{3}\rho_\mathrm{S}u_{\mathrm{S},y}, \label{eq:3.52a}
+\end{align}
+using $c_s^2 = 1/3$ in lattice units. We find the density by subtracting (\ref{eq:3.49c}) from (\ref{eq:3.49a}):
+\begin{align}
+    \rho_\mathrm{S} - \rho_\mathrm{S}u_{\mathrm{S},y} &= f_0 + f_1 + f_2 + 2(f_4 + f_7 + f_8), \nonumber \\
+    \implies \rho_\mathrm{S} &= \frac{1}{1-u_{\mathrm{S},y}} \left[ f_0 + f_1 + f_2 + 2(f_4 + f_7 + f_8)\right]. \label{eq:3.52b}
+\end{align}
+We find $f_5$ by adding (\ref{eq:3.49b}) and (\ref{eq:3.49c}), and using (\ref{eq:3.52a}):
+\begin{align}
+    \rho_\mathrm{S}u_{\mathrm{S},x} + \rho_\mathrm{S}u_{\mathrm{S},y} &= f_1 - f_2 + f_3 - f_4 + 2f_5 - 2f_7, \nonumber \\
+    &= f_1 - f_2 + \frac{2}{3}\rho_\mathrm{S}u_{\mathrm{S},y} + 2f_5 - 2f_7, \nonumber \\
+    \implies f_5 &= f_7 - \frac{1}{2}(f_1-f_2) + \frac{1}{2}\rho_\mathrm{S}u_{\mathrm{S},x} + \frac{1}{6}\rho_\mathrm{S}u_{\mathrm{S},y}. \label{eq:3.52c}
+\end{align}
+If we instead subtract (\ref{eq:3.49b}) from (\ref{eq:3.49c}) and use (\ref{eq:3.52a}), we find $f_6$:
+\begin{align}
+    \rho_\mathrm{S}u_{\mathrm{S},y} - \rho_\mathrm{S}u_{\mathrm{S},x} &= -f_1 + f_2 + f_3 - f_4 + 2f_6 - 2f_8, \nonumber \\
+    &= -f_1 + f_2 + \frac{2}{3}\rho_\mathrm{S}u_{\mathrm{S},y} + 2f_6 - 2f_8, \nonumber \\
+    \implies f_6 &= f_8 + \frac{1}{2}(f_1-f_2) - \frac{1}{2}\rho_\mathrm{S}u_{\mathrm{S},x} + \frac{1}{6}\rho_\mathrm{S}u_{\mathrm{S},y}. \label{eq:3.52d}
+\end{align}
+\end{subequations}
+\setcounter{equation}{51}
+\newpage
+Collecting this altogether, we have the following conditions for the bottom boundary:
+\subsubsection*{Bottom Boundary ($f_3$, $f_5$, $f_6$)}
+\vspace{-5mm}
+\begin{subequations}
+\begin{align}
+    \rho_\mathrm{S} &= \frac{1}{1-u_{\mathrm{S},y}} \left[ f_0 + f_1 + f_2 + 2(f_4 + f_7 + f_8)\right], \\
+    f_3 &= f_4 + \frac{2}{3}\rho_\mathrm{S}u_{\mathrm{S},y}, \\
+    f_5 &= f_7 - \frac{1}{2}(f_1-f_2) + \frac{1}{2}\rho_\mathrm{S}u_{\mathrm{S},x} + \frac{1}{6}\rho_\mathrm{S}u_{\mathrm{S},y}, \\
+    f_6 &= f_8 + \frac{1}{2}(f_1-f_2) - \frac{1}{2}\rho_\mathrm{S}u_{\mathrm{S},x} + \frac{1}{6}\rho_\mathrm{S}u_{\mathrm{S},y}.
+\end{align}
+\end{subequations}
+
+A similar derivation, shown in Appendix \ref{appendix:a}, gives us the following conditions for the top, left and right boundary walls.
+
+\subsubsection*{Top Boundary ($f_4$, $f_7$, $f_8$)}
+\vspace{-5mm}
+\begin{subequations} \label{eq:3.53}
+\begin{align}
+    \rho_\mathrm{N} &= \frac{1}{1+u_{\mathrm{N},y}} \left[ f_0 + f_1 + f_2 + 2(f_3 + f_5 + f_6)\right], \label{eq:3.53a}\\
+    f_4 &= f_3 - \frac{2}{3}\rho_\mathrm{N}u_{\mathrm{N},y}, \label{eq:3.53b} \\
+    f_7 &= f_5 + \frac{1}{2}(f_1-f_2) - \frac{1}{2}\rho_\mathrm{N}u_{\mathrm{N},x} + \frac{1}{6}\rho_\mathrm{N}u_{\mathrm{N},y}, \label{eq:3.53c}\\
+    f_8 &= f_6 - \frac{1}{2}(f_1-f_2) + \frac{1}{2}\rho_\mathrm{N}u_{\mathrm{N},x} - \frac{1}{6}\rho_\mathrm{N}u_{\mathrm{N},y}.\label{eq:3.53d}
+\end{align}
+\end{subequations}
+
+\subsubsection*{Left Boundary ($f_1$, $f_5$, $f_8$)}
+\vspace{-5mm}
+\begin{subequations} \label{eq:3.54}
+\begin{align}
+    \rho_\mathrm{W} &= \frac{1}{1-u_{\mathrm{W},x}} \left[ f_0 + f_3 + f_4 + 2(f_2 + f_6 + f_7)\right], \label{eq:3.54a}\\
+    f_1 &= f_2 + \frac{2}{3}\rho_\mathrm{W}u_{\mathrm{W},x}, \label{eq:3.54b}\\
+    f_5 &= f_7 - \frac{1}{2}(f_3-f_4) + \frac{1}{6}\rho_\mathrm{W}u_{\mathrm{W},x} + \frac{1}{2}\rho_\mathrm{W}u_{\mathrm{W},y}, \label{eq:3.54c}\\
+    f_8 &= f_6 + \frac{1}{2}(f_3-f_4) + \frac{1}{6}\rho_\mathrm{W}u_{\mathrm{W},x} - \frac{1}{2}\rho_\mathrm{W}u_{\mathrm{W},y}. \label{eq:3.54d}
+\end{align}
+\end{subequations}
+
+\subsubsection*{Right Boundary ($f_2$, $f_6$, $f_7$)}
+\vspace{-5mm}
+\begin{subequations} \label{eq:3.55}
+\begin{align}
+    \rho_\mathrm{E} &= \frac{1}{1+u_{\mathrm{E},x}} \left[ f_0 + f_3 + f_4 + 2(f_1 + f_5 + f_8)\right], \label{eq:3.55a}\\
+    f_2 &= f_1 - \frac{2}{3}\rho_\mathrm{E}u_{\mathrm{E},x}, \label{eq:3.55b} \\
+    f_6 &= f_8 - \frac{1}{2}(f_3-f_4) - \frac{1}{6}\rho_\mathrm{E}u_{\mathrm{E},x} + \frac{1}{2}\rho_\mathrm{E}u_{\mathrm{E},y} \label{eq:3.55c} \\
+    f_7 &= f_5 + \frac{1}{2}(f_3-f_4) - \frac{1}{6}\rho_\mathrm{E}u_{\mathrm{E},x} + \frac{1}{2}\rho_\mathrm{E}u_{\mathrm{E},y}. \label{eq:3.55d}
+\end{align}
+\end{subequations}
+\newpage
+\section{The Forced Lattice Boltzmann Equations} \label{sec:3.4}
+Thus far, we have dealt with the force-free lattice Boltzmann algorithm. We will now consider the effects of an external force $\mathbf{F}$ acting on a pure fluid before considering the effects of the drag force from the porous medium. 
+
+% and have not assumed that $\mathbf{u}$ is averaged over the volume. In order to adapt the LBM for porous media, we first adapt LBM for an external force $\mathbf{F}$, before considering the effects of the porous medium, as given by \cite{guo+zhao}. %the volume-averaged velocity $\langle\mathbf{u}\rangle$, and introduce a force-term to account for the drag due to the porous medium. 
+
+For a force $\mathbf{F} \neq \mathbf{0}$, the Boltzmann BGK equation becomes
+\begin{equation}
+    \frac{\partial f}{\partial t} + \xi_\beta\frac{\partial f}{\partial x_\beta} + \frac{F_\beta}{\rho} \frac{\partial f}{\partial \xi_\beta} = -\frac{1}{\tau}(f - f^{\mathrm{eq}}), \label{eq:3.56}
+\end{equation}
+with the forced lattice Boltzmann equation being
+\begin{equation}
+    f_k(\mathbf{x} + \mathbf{c}_k\Delta t, t + \Delta t) = f_k(\mathbf{x}, t) -\frac{f_k - f_k^{\mathrm{eq}}}{\tau}\Delta t + F_k\Delta t. \label{eq:3.57}
+\end{equation}
+Here, the general form of the discrete forcing term is given by equation (20) in \cite{guoetal}:
+\begin{equation}
+    F_k = w_k\left(1-\frac{1}{2\tau}\right)\left[\frac{\mathbf{c}_k\cdot\mathbf{F}}{c_s^2} + \frac{(\mathbf{u}\cdot\mathbf{c}_k)(\mathbf{F}\cdot\mathbf{c}_k)}{c_s^4} - \frac{\mathbf{u}\cdot\mathbf{F}}{c_s^2}\right]. \label{eq:3.58}
+\end{equation}
+The macroscopic fluid density and momentum density can then be computed by:
+\begin{subequations} \label{eq:3.59}
+\begin{align}
+    \rho(\mathbf{x},t) &= \sum_k f_k(\mathbf{x},t), \label{eq:3.59a} \\
+    \rho\mathbf{u}(\mathbf{x},t) &= \sum_k \mathbf{c}_k f_k(\mathbf{x},t) + \frac{\Delta t}{2}\rho\mathbf{F}. \label{eq:3.59b}
+\end{align}
+\end{subequations}
+Figure \ref{fig:forcedalgo} shows the substeps of the forced lattice Boltzmann algorithm visually.
+
+\begin{figure}[!htb]
+\centering
+\input{figures/lbm/porousalgo}
+\caption{An overview of a cycle of the forced LB algorithm} \label{fig:forcedalgo}
+\end{figure}
+
+In the case of porous media, equation (\ref{eq:3.57}) is still valid for the volume-averaged particle distribution functions, but we need to modify the equilibrium function $\langle f_k^{\mathrm{eq}}\rangle$, the discrete force term $F_k$ and the volume-averaged macroscopic quantities $\rho$ and $\langle\mathbf{u}_\beta\rangle$ in order to fully include the effect of the porous medium on the fluid. We will use the modifications proposed by Guo \& Zhao in \cite{guo+zhao}, where they defined the equilibrium function as
+\begin{equation}
+    \langle f_k^{\mathrm{eq}} \rangle = w_k\rho\left[1 + \frac{\mathbf{c}_k\cdot\langle\mathbf{u}_\beta\rangle}{c_s^2} + \frac{\left(\langle\mathbf{u}_\beta\rangle\cdot\mathbf{c}_k\right)^2}{2\varepsilon_\beta c_s^4} - \frac{\langle\mathbf{u}_\beta\rangle\cdot\langle\mathbf{u}_\beta\rangle} {2\varepsilon_\beta c_s^2}\right], \label{eq:3.60}
+\end{equation}
+and the discrete force term as
+\begin{equation}
+    F_k = w_k\rho\left(1-\frac{1}{2\tau}\right)\left[\frac{\mathbf{c}_k\cdot\mathbf{F}}{c_s^2} + \frac{\left(\langle\mathbf{u}_\beta\rangle\cdot\mathbf{c}_k\right)(\mathbf{F}\cdot\mathbf{c}_k)}{\varepsilon_\beta c_s^4} - \frac{\langle\mathbf{u}_\beta\rangle\cdot\mathbf{F}}{\varepsilon_\beta c_s^2}\right]. \label{eq:3.61}
+\end{equation}
+The volume-averaged density and fluid velocity is given by
+\begin{subequations} \label{eq:3.62}
+\begin{align}
+    \rho &= \sum_k \langle f_k(\mathbf{x},t) \rangle \label{eq:3.62a} \\
+    \rho\langle\mathbf{u}_\beta\rangle &= \sum_k \mathbf{c}_k \langle f_k(\mathbf{x},t)\rangle + \frac{\Delta t}{2}\rho\mathbf{F}. \label{eq:3.62b}
+\end{align}
+\end{subequations}
+From Section \ref{sec:2.5}, we know the force used to model the porous drag force is given by (\ref{eq:2.22b}):
+\begin{equation}
+    \mathbf{F} = \varepsilon_\beta\mathbf{g} - \left(\frac{\nu\varepsilon_\beta\langle\mathbf{u}_\beta\rangle}{K} + \frac{F_\varepsilon\varepsilon_\beta\langle\mathbf{u}_\beta\rangle\left|\langle\mathbf{u}_\beta\rangle\right|}{\sqrt{K}}\right). \label{eq:3.63}
+\end{equation}
+Substituting (\ref{eq:3.63}) into (\ref{eq:3.62b}), we get
+\begin{equation}
+    \rho\langle\mathbf{u}_\beta\rangle = \sum_k\mathbf{c}_kf_k + \frac{\Delta t}{2}\rho\left[\varepsilon_\beta\mathbf{g} - \left(\frac{\nu\varepsilon_\beta\langle\mathbf{u}_\beta\rangle}{K} + \frac{F_\varepsilon\varepsilon_\beta\langle\mathbf{u}_\beta\rangle\left|\langle\mathbf{u}_\beta\rangle\right|}{\sqrt{K}}\right)\right], \label{eq:3.64}
+\end{equation}
+which is not particularly helpful as we have $\langle\mathbf{u}_\beta\rangle$ on both sides of the equation. To find $\langle\mathbf{u}_\beta\rangle$ explicitly, we define a \textbf{temporal velocity field} which does not depend on the drag effects of the porous medium: 
+\begin{equation}
+    \rho\langle\mathbf{v}_\beta\rangle = \sum_k\mathbf{c}_kf_k + \frac{\Delta t}{2}\varepsilon_\beta\rho\mathbf{g}. \label{eq:3.65}
+\end{equation}
+Then we can write (\ref{eq:3.64}) as
+\begin{equation}
+    \rho\langle\mathbf{u}_\beta\rangle\left(1 + \varepsilon_\beta\frac{\Delta t}{2}\frac{\nu}{K} + \varepsilon_\beta\frac{\Delta t}{2}\frac{F_\varepsilon}{\sqrt{K}}|\langle\mathbf{u}_\beta\rangle| \right)-\rho\langle\mathbf{v}_\beta\rangle = \mathbf{0}. \label{eq:3.66}
+\end{equation}
+Now, defining the parameters $c_0$ and $c_1$ as
+\begin{equation}
+    c_0 = \frac{1}{2}\left(1 + \varepsilon_\beta\frac{\Delta t}{2}\frac{\nu}{K}\right) \quad \text{and} \quad c_1 = \varepsilon_\beta\frac{\Delta t}{2}\frac{F_\varepsilon}{\sqrt{K}}, \label{eq:3.67}
+\end{equation}
+we can write (\ref{eq:3.66}) as
+\begin{equation}
+    \rho\langle\mathbf{u}_\beta\rangle\left(2c_0 + c_1|\langle\mathbf{u}_\beta\rangle|\right) - \rho\langle\mathbf{v}_\beta\rangle = \mathbf{0}. \label{eq:3.68}
+\end{equation}
+Since $\rho\neq0$, we can rearrange to get
+\begin{equation}
+    \langle\mathbf{u}_\beta\rangle = \frac{\langle\mathbf{v}_\beta\rangle}{2c_0 + c_1|\langle\mathbf{u}_\beta\rangle|}. \label{eq:3.69}
+\end{equation}
+To eliminate the norm $|\langle\mathbf{u}_\beta\rangle|$ from the denominator, we take the norm of (\ref{eq:3.69}) and rearrange to get a quadratic expression in $|\langle\mathbf{u}_\beta\rangle|$:
+\begin{equation}
+    c_1|\langle\mathbf{u}_\beta\rangle|^2 + 2c_0|\langle\mathbf{u}_\beta\rangle| - |\langle\mathbf{v}_\beta\rangle| = 0, \label{eq:3.70}
+\end{equation}
+which has roots
+\begin{equation}
+    |\langle\mathbf{u}_\beta\rangle| = -\frac{1}{c_1}\left(c_0\pm\sqrt{c_0^2 + c_1|\langle\mathbf{v}_\beta\rangle|}\right). \label{eq:3.71}
+\end{equation}
+Clearly, one root is negative and therefore not physical as the norm of the velocity field, so we take the other root and substitute it into (\ref{eq:3.69}) to get
+\begin{equation}
+    \langle\mathbf{u}_\beta\rangle = \frac{\langle\mathbf{v}_\beta\rangle}{c_0 + \sqrt{c_0^2 + c_1|\langle\mathbf{v}_\beta\rangle|}}, \label{eq:3.72}
+\end{equation}
+which we can then use to calculate velocity using the moments.
+
+% Therefore, the full lattice Boltzmann algorithm for porous media is given by Figure 3.8.
+% \begin{figure}[!htb]
+% \centering
+% \input{figures/lbm/porousalgo}
+% \caption{An overview of a cycle of the LB algorithm for porous media}
+% \end{figure}
+
+
+%--------------------------------------------------------------------------------------
+%	NUMERICAL SIMULATIONS
+%--------------------------------------------------------------------------------------
+
+\chapter{Benchmark Simulations} \label{chap:4}
+We are now ready to simulate the fluid flow numerically. To do this, we first need to benchmark the code, which is the purpose of this chapter. Benchmarking is the process of verifying and validating the code: \textbf{verification} is the process of checking the code for errors while coding, and \textbf{validation} is the process of checking that the code output is correct \cite{v&v}. Verifying the code is done every time the program is compiled, where we ensure that the output remains feasible.
+
+% I verified the code while building the program, ensuring that the output remained reasonable
+% Verifying the code was done while coding, by regularly running the code to ensure that the code fulfils our requirements of a program that simulates the fluid. 
+
+In order to validate the code and our method, we apply it to two 2D problems: porous Poiseuille flow driven by a constant force, and porous Couette flow between two parallel plates, which we compare to the results given by \cite{guo+zhao}. % After validating the code, we apply the method to a fluid flow in the shape of an aneurysm. 
+
+\section{Dimensionless numbers}
+Dimensionless numbers in fluid mechanics play an important role in analysing the flow of various fluids. As mentioned in Section \ref{sec:3.2}, the law of similarity states that fluid flows that share the same dimensionless numbers exhibit the same physics. Therefore, the units of these numerical simulations do not matter as the solutions will be the same if we rescale the variables.
+
+In this project, we will focus on 2 dimensionless numbers: the Reynolds number Re and the Darcy number Da.
+
+\subsection{Reynolds number Re}
+The \textbf{Reynolds number} is the ratio between inertial and viscous forces, given by
+\begin{equation}
+    \mathrm{Re} = \frac{LU}{\nu}, \label{eq:4.1}
+\end{equation}
+where $L$ and $U$ are the characteristic length and velocity respectively. A derivation of this equation can be found in Section 6.6 of \cite{fmnotes}. 
+
+In the high Reynolds number limit ($\mathrm{Re} \rightarrow \infty$), the inertial term dominates and we have \textbf{turbulent flows}, characterised by chaotic motion. Comparatively, viscosity dominates in the low Reynolds number limit, giving \textbf{laminar flow} where the fluid particles follow smooth paths. In this project, we work with flows of $\mathrm{Re}<2000$, and which are therefore considered laminar.
+\newpage
+\subsection{Darcy number Da} \label{sec:4.1.2}
+The \textbf{Darcy number} is a dimensionless number specific to fluid flows moving in porous media, and represents the ratio of permeability to the cross-sectional area of the medium. It is given by
+\begin{equation}
+    \mathrm{Da} = \frac{K}{L^2}, \label{eq:4.2}
+\end{equation}
+as defined in \cite{guo+zhao}. Typically for pure fluids, we have $\varepsilon_\beta = 1$, which gives $K\rightarrow\infty$, according to (\ref{eq:2.20}). As a result, we also have $\mathrm{Da}\rightarrow\infty$. Computationally, we will take $\mathrm{Da}=10^6$ for pure fluids, to avoid working with {\fontfamily{cmtt}\selectfont\textcolor{black}{np.inf}} in Python.
+
+% As permeability is a measure of how easily a fluid flows through a porous medium, a higher permeability and therefore a higher Darcy number indicates it is easier for a fluid to flow through a medium. 
+
+The flows we will discuss in this chapter are typically governed by $\varepsilon_\beta$, and the dimensionless numbers Re and Da. As mentioned in Section \ref{sec:2.5}, the drag force from the porous medium is modelled by equation (\ref{eq:2.22b}):
+\begin{equation}
+    \mathbf{F} = \varepsilon_\beta\mathbf{g} - \left(\frac{\nu\varepsilon_\beta\langle\mathbf{u}_\beta\rangle}{K} + \frac{F_\varepsilon\varepsilon_\beta\langle\mathbf{u}_\beta\rangle\left|\langle\mathbf{u}_\beta\rangle\right|}{\sqrt{K}}\right), \label{eq:4.3}
+\end{equation}
+where the linear drag is given by the 2nd term and the non-linear drag is given by the 3rd term. If we consider the ratio between the linear and non-linear drags, we have
+\begin{equation}
+    \frac{F_\varepsilon|\langle\mathbf{u}\rangle|/\sqrt{K}}{\nu/K} \sim \frac{U}{\nu}\sqrt{K}=\mathrm{Re}\sqrt{\mathrm{Da}}, \label{eq:4.4}
+\end{equation}
+which means that for large Da or Re, we need to consider the effect of the non-linear drag. Note that the characteristic lengths $L$ from Re and $\sqrt{\mathrm{Da}}$ cancel out here.
+% noting that the characteristic lengths $L$ from Re and $\sqrt{\mathrm{Da}}$ cancel out. Equation (\ref{eq:4.4}) means that for large Da or Re, we need to consider the effect of the non-linear drag. 
+
+% \section{Benchmark Cases}
+\section{Poiseuille Flow in a Porous Medium}
+Poiseuille flow is flow created between two stationary parallel plates separated by a distance $H$, as shown by Figure \ref{fig:poiseuille}. The flow is therefore driven by a constant force in the $x$-direction $\mathbf{g} = (g_x, 0)$.
+% \todo[inline, color=red!20]{talk about what sort of flow this is}
+\begin{figure}[!htb]
+\centering
+\input{figures/poiseuille/sketch}
+\caption{Sketch of Poiseuille flow for a pure fluid.}
+\label{fig:poiseuille}
+\end{figure}
+
+For pure fluids, we can solve the continuity and Navier-Stokes equations ((\ref{eq:2.6}) and (\ref{eq:2.9})) to obtain an analytical solution for the flow: the solution of an incompressible Poiseuille flow in 3D cylindrical coordinates is given in Section 6.4 of \cite{fmnotes}. Comparatively, for Poiseuille flow in a channel filled with a porous medium, analytical solutions are not available for the entire flow. We therefore need to simulate this flow numerically. 
+
+We model porous Poiseuille flow is modelled in a 2D channel of width $H$ and porosity $\varepsilon_\beta=0.1$, assuming there is only stream-wise velocity in the $x$-direction and no lateral velocity component in the $y$-direction.
+
+In the simulations, our lattice is an $80\times80$ mesh grid and the relaxation time $\tau$ is set to 0.8. %For constant Re ($\mathrm{Re}=0.1$), we simulate the flow for various Da and for constant Da, we vary Re from $10^{-2}$ to $10^2$. 
+To initialise, the velocity field is set to zero at each lattice node, the density is set to $\rho=1.0$, and the distribution function is set to the equilibrium distribution function at $t=0$.
+
+We apply periodic boundary conditions to the inlet and outlet of the flow, and we use the half-way bounce-back scheme on the top and bottom walls to simulate a no-slip boundary condition $u(x,0)=u(x,H)=0$. 
+
+The code for this flow is provided in Appendix \ref{sec:B.1}, noting that we have used {\fontfamily{cmtt}\selectfont\textcolor{black}{fold}} to represent $f_k$ and {\fontfamily{cmtt}\selectfont\textcolor{black}{f}} to represent $f_k^*$. We simulated the flow for various Darcy and Reynolds numbers, and plotted the velocity profile at the centre of the channel $x=H/2$. We have also taken $u_0$ to be the peak velocity of the flow, which we calculated by rearranging (\ref{eq:4.1}):
+\begin{equation}
+    u_0 = \frac{\nu \mathrm{Re}}{H}, \label{eq:4.5}
+\end{equation}
+and taking the characteristic length $L$ to be the width of the channel $H$.
+
+\begin{figure}[!htb]
+\begin{flushleft}
+\centering
+    \input{figures/poiseuille/Re.tex}
+    \input{figures/poiseuille/Da.tex}
+\end{flushleft}
+\caption[Velocity profiles of porous Poiseuille flow for various Reynolds and Darcy numbers]{Velocity profiles of porous Poiseuille flow for various Reynolds and Darcy numbers - the crosses $\times$ represent the results produced numerically and the solid lines represent the solutions given by \cite{guo+zhao}}
+\label{fig:numpoiseuille}
+\end{figure}
+
+In Figure \ref{fig:numpoiseuille}, the results obtained by the program are compared to the solutions obtained by Guo \& Zhao in \cite{guo+zhao}, and we can see that our simulation results have a good agreement with their work. We can also see that as the flow reaches its new equilibrium, the stream-wise velocity component is uniform along the channel. This is reasonable as Poiseuille flow is driven by a constant force in the $x$-direction, so we should expect the velocity to become constant as we reach the middle of the channel.
+
+Moreover, as we increase the Reynolds number with a constant Darcy number, the maximum velocity $u_0$ increases but the effect of the non-linear inertial forces increases as well, which reduces the velocity of the flow overall. Consequently, the ratio of the velocity to the peak velocity $u/u_0$ is smaller for higher Reynolds numbers than for lower Reynolds numbers.
+
+When we increase the Darcy number at a constant Reynolds number, the permeability of the medium increases by the relation (\ref{eq:4.2}. From Figure \ref{fig:numpoiseuille}, we see that the shape of the velocity profile becomes more parabolic. This is due to the fact that the velocity of the flow also increases as the Darcy number and permeability increase, resulting in the non-linear inertial force having a larger contribution towards the boundaries of the flow.
+
+% \todo{correct this- higher permeability = higher velocity = more drag}
+% When we increase the Darcy number at a constant Reynolds number, the effect of the non-linear inertial resistance becomes more important, and the velocity near the walls is reduced compared to the peak velocity. 
+\newpage
+\section{Couette Flow in a Porous Medium} \label{sec:4.3}
+Couette flow, as shown in Figure \ref{fig:couette}, is a flow between two parallel plates at a distance $H$ apart, but unlike Poiseuille flow which has stationary walls, there is a relative velocity between the two plates. Accordingly, we have one stationary wall and one moving wall, which moves tangentially to the flow, with a constant velocity $u_0$, which we also calculate using (\ref{eq:4.4}). This velocity drives the flow instead of the constant force given in Poiseuille flow, i.e. we have $\mathbf{g} = \mathbf{0}$. 
+
+\begin{figure}[!htb]
+\centering
+\input{figures/couette/sketch}
+\caption{Sketch of Couette flow for a pure fluid.}
+\label{fig:couette}
+\end{figure}
+
+Like Poiseuille flow, there is a known analytical solution to the continuity and Navier-Stokes equations ((\ref{eq:2.6}) and (\ref{eq:2.9})): an example of an incompressible Couette flow is also given in Section 6.4 of \cite{fmnotes}. However, when the channel is filled with a porous medium, there is again not an analytical solution available for the entire flow. 
+% Again, for pure fluids, we can solve the Navier-Stokes and continuity equations to obtain an analytical solution for the flow, with an example also given in \todo{cite fm notes (ep)}. 
+
+The simulation parameters are the same as those for Poiseuille flow: an $80\times80$ mesh grid as the lattice, $\varepsilon_\beta=0.1$ and $\tau=0.8$. To initialise, the velocity field is set to zero at each lattice node except $y=H$, where we have $u(x,H)=u_0$. The density is set to $\rho=1.0$, and the distribution function is set to the equilibrium distribution function at $t=0$. 
+ 
+Again, we apply periodic boundary conditions to the inlet and outlet of the flow, and the half-way bounce-back scheme to the bottom wall to simulate the no-slip boundary condition. At the top wall, however, we implement the Zou \& He boundary conditions given by (\ref{eq:3.53}) with $\mathbf{u}_{\mathrm{b,N}}=(u_0,0)$.
+
+The code for this flow has been omitted, but is similar to that for Poiseuille flow in a porous medium. The main differences lie in the calculation of {\fontfamily{cmtt}\selectfont\textcolor{black}{feq}} and {\fontfamily{cmtt}\selectfont\textcolor{black}{Fdist}} when initialising the simulation, and also the implementation of the boundary conditions. Specifically, we write the following code instead of the half-way bounce-back condition shown in Appendix \ref{sec:B.1}, making use of Equations (\ref{eq:3.53}).
+\begin{figure}[!htb]{\small
+\begin{mdframed}[backgroundcolor=red!10, linecolor=red!10]
+\begin{minted}{python}
+    rhon = fold[0, :, ny - 1] + fold[1, :, ny - 1] + fold[2, :, ny - 1] 
+    + 2*fold[3, :, ny - 1] + 2*fold[5, :, ny - 1] + 2*fold[6, :, ny - 1]
+
+    fold[4, :, ny - 1] = f[3, :, ny - 1]
+    fold[7, :, ny - 1] = f[5, :, ny - 1] + 0.5*(f[1, :, ny - 1] 
+    - f[2, :, ny - 1]) - 0.5*rhon*u0 
+    fold[8, :, ny - 1] = f[6, :, ny - 1] - 0.5*(f[1, :, ny - 1] 
+    - f[2, :, ny - 1]) + 0.5*rhon*u0
+\end{minted}
+\end{mdframed}
+}
+\caption[Python implementation of the Zou \& He boundary condition on the top boundary]{Python implementation of the Zou \& He boundary condition on the top boundary. Note that {\fontfamily{cmtt}\selectfont\textcolor{black}{fold}} corresponds to $f_k$ and {\fontfamily{cmtt}\selectfont\textcolor{black}{f}} corresponds to $f_k^*$.}
+\end{figure}
+
+\begin{figure}[!htb]
+\begin{flushleft}
+\centering
+    \input{figures/couette/Re.tex}
+    \input{figures/couette/Da.tex}
+\end{flushleft}
+\caption[Velocity profiles of porous Couette flow for various Reynolds and Darcy numbers]{Velocity profiles of porous Couette flow for various Reynolds and Darcy numbers - the crosses $\times$ represent the results produced numerically and the solid lines represent the solutions given by \cite{guo+zhao}}
+\label{fig:numcouette}
+\end{figure}
+\newpage 
+Again, we compared the results obtained by the program to the solutions obtained by Guo \& Zhao in \cite{guo+zhao}, as shown in Figure \ref{fig:numcouette}, and we can see that our simulation results have a good agreement with their work. We can also see that the stream-wise velocity is highest closest to the top boundary, which is as expected since it is the velocity of the top wall that drives the flow. 
+
+Additionally, as we increase the Reynolds number while keeping the Darcy number constant, the effect of the inertial forces increases and it becomes more difficult for the fluid to flow through the medium. This can be seen by the fact that the velocity at the middle of the channel ($y=H/2$) is highest for the lowest Reynolds number. When we increase the Darcy number at a constant Reynolds number, the permeability of the medium increases and it becomes easier for the fluid to flow through the medium. 
+
+\section{Couette Flow in a system with different porosities}
+Now we apply the method to Couette flow in a system where there is a gap between the porous medium and the moving boundary, with the gap being filled with a pure fluid. This is particularly useful for our next step in modelling an aneurysm where there are regions of different porosity. For this flow, we set
+\begin{equation}
+    \varepsilon_\beta = 
+    \begin{cases}
+        0.1 & 0 \leq y \leq \frac{H}{2}, \\
+        1.0 & \frac{H}{2} < y \leq H.
+    \end{cases}
+\end{equation}
+As mentioned in Section \ref{sec:4.1.2}, we take the Darcy number for a pure fluid to be $\mathrm{Da}=10^6$. Computationally, we assign a value for the porosity and the Darcy number to each node, as shown below. 
+
+\begin{figure}[!htb]{\small
+\begin{mdframed}[backgroundcolor=red!10, linecolor=red!10]
+\begin{minted}{python}
+    eps = np.zeros((nx, ny))
+    eps[:, :ny//2] = 0.1
+    eps[:, ny//2:] = 1.0
+    Da = np.zeros((nx, ny))
+    Da[:, :ny//2] = 0.001
+    Da[:, ny//2:] = 1e6
+\end{minted}
+\end{mdframed}
+}
+\caption[Python implementation of regions of different porosity]{Python implementation of regions of different porosity - a value for the porosity and Darcy number is assigned to each node.}
+\end{figure}
+
+We take $\mathrm{Re}=0.001$ for this flow. As we are taking small Reynolds and Darcy numbers, the effect from the non-linear drag term is negligible. The setup for this flow is the same as that for Couette flow in Section \ref{sec:4.3}, and the code for this flow is provided in Appendix \ref{sec:B.2}.
+
+\begin{figure}[!htb]
+    \centering
+    \input{figures/couette/vary.tex}
+    \caption[Velocity profile of Couette flow in a system with different porosities]{Velocity profile of Couette flow in a system with different porosities - the crosses $\times$ represent the results produced numerically and the solid lines represent the solutions given by \cite{guo+zhao}.}
+    \label{fig:couette_vary}
+\end{figure}
+
+As before, we compared the results obtained by the program to the solutions obtained by Guo \& Zhao in \cite{guo+zhao}, which can be seen in Figure \ref{fig:couette_vary}. Again, our simulation results agree with the previous work. From the figure, we can see that the fluid flow in the porous medium follows the velocity profile of the flow in Figure \ref{fig:couette}. Outside the porous medium, the velocity profile is linear, which is the same as that for a pure Couette flow.
+
+%--------------------------------------------------------------------------------------
+%	SIMULATION OF AN ANEURYSM
+%--------------------------------------------------------------------------------------
+
+\chapter{Simulation of an aneurysm} \label{chap:5}
+% \todo[inline, color=red!20]{discuss what you have done with this}
+Having benchmarked the code, we are now ready to simulate a two-dimensional blood flow through an aneurysm. The insertion of an endovascular coil is often used to treat cerebral aneurysms by blocking the blood flow through the blood vessel, thereby reducing the risk of aneurysm rupture \cite{MORALES2013}. An illustration of this is given in Figure \ref{fig:ballooncoil}.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.5\textwidth, angle=90, origin=c]{figures/aneurysm/ballooncoil.jpg}
+    \caption[An illustration of an aneurysm treated with balloon-assisted coiling]{An illustration of an aneurysm treated with balloon-assisted coiling \cite[Figure 2]{imaging}.}
+    \label{fig:ballooncoil}
+\end{figure}
+
+Generally, the shape of the coil is known before it is inserted into the blood vessel. However, it remains difficult to determine the exact geometry of the coil within the aneurysm itself once it is inserted, even with modern imaging techniques \cite{imaging}, as we can see in Figure \ref{fig:coilinaneurysm}. This is due to a number of reasons: the coils themselves are often very small, yet geometrically complex and once inserted into the aneurysm, they are often distributed unpredictably, as described by Morales et al. in \cite{Morales2011}. 
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/aneurysm/aneurysmcoil.jpg}
+    % \includegraphics[width=0.45\textwidth, angle=90, origin=c]{figures/aneurysm/ballooncoil.jpg}
+    \caption[A medical image of an aneurysm]{A medical image of an aneurysm - the arrow in \textbf{A} points to an aneurysm, the arrow in \textbf{B} indicates an aneurysm that has been treated by a coil \cite[Figure 1]{imaging}.}
+    \label{fig:coilinaneurysm}
+\end{figure}
+\newpage
+Researchers have conducted studies to simulate the blood flow dynamics in coiled aneurysms, where they have modelled coils explicitly using spheres \cite{BYUN2004} as well as modelled the aneurysms as porous media \cite{kakalis2008}. In line with what we have been doing so far, we can model the aneurysm as a porous medium by treating the coil as the $\alpha$-phase and blood as the $\beta$-phase.
+
+% Studies have been conducted in order to simulate the blood flow dynamics in coiled aneurysms, where researchers have both modelled the coils explicitly, using spheres for instance \cite{BYUN2004}, and modelled the aneurysms as porous media \cite{kakalis2008}.
+
+There are many assumptions that must be made in order to do this. For instance, blood flow is typically non-Newtonian due to the high volume of red blood cells \cite{MORALES2013} but for simplicity, we assume the fluid is Newtonian and thus, the viscosity of the fluid is constant. One could also argue that the elasticity of the coil could have an effect on the fluid flow, but the coils are packed tightly into the aneurysm itself. For that reason, we will assume the coil within the aneurysm, and therefore the porous medium used to model the aneurysm, is rigid and isotropic.
+
+% Accordingly, we can model the aneurysm as a porous medium. 
+
+% We consider the case where the aneurysm has been treated with the insertion of a coil. As mentioned in Chapter \ref{chap:1}, it is difficult to determine the exact geometry of the coil within the aneurysm once inserted, allowing us to model the aneurysm as a porous medium, assuming the porous medium is rigid and blood is a Newtonian fluid.
+
+% Finally, we will collate what we have done in the previous chapters, as well as the benchmark cases to model blood flow through an aneurysm. We consider the case where the aneurysm has been treated with a coil. The exact geometry of this coil within the aneurysm is often unknown, although its configuration and effect on the dynamics of blood flow remains a topic of interest to researchers. \todo{check link } Therefore, the region formed by the aneurysm can be modelled as a porous medium. As mentioned in Chapter \ref{chap:1}, we assume this porous medium is rigid and that blood is a Newtonian fluid.
+
+% We therefore model this region as a porous medium, as we have developed a model where we do not need to have the exact geometry of the coil within the aneurysm to simulate the flow.
+
+We consider the situation illustrated in Figure \ref{fig:an_sketch}, where we have a circular deformation of the blood vessel. The radius of this circle is labelled by $r$ and the width of the blood vessel is labelled by $L$. Note that $H$ is the length of the blood vessel that we will be modelling.
+
+\begin{figure}[!htb]
+\centering
+\begin{tikzpicture}[thick,scale=1.1, every node/.style={scale=1}, >={Latex[length=1.5mm, width=1mm]}]
+    \draw (0, -0.5) -- (6, -0.5);
+    \draw (0, 1) -- (2.4, 1);
+    \draw (3.6, 1) -- (6, 1);
+    \draw (3.6, 1) arc[start angle = -53.1, end angle = 233.1, radius = 1];
+    % \draw [gray, thin, dashed] (3.88, 1) arc[start angle = -30, end angle = -150, radius = 1];
+    \begin{scope}
+    \path[clip] (3,1.8) circle (1);
+    \fill[thick, pattern=north east lines, pattern color=red] (2,1) -- (4,1) -- (4,3) -- (2,3) -- cycle;
+    \end{scope}
+    \draw[black, <-] (1, -0.5) -- (1, 0);
+    \draw[black, ->] (1, 0.5) -- (1, 1);
+    \node at (1, 0.25) {$L$};
+    \draw[black, <->] (3, 1.8) -- (2, 1.8);
+    \node at (2.5, 2) {$r$};
+    \draw[black, <-] (0, -0.75) -- (2.75, -0.75);
+    \draw[black, ->] (3.25, -0.75) -- (6, -0.75);
+    \node at (3, -0.75) {$H$};
+\end{tikzpicture}
+\caption{A diagram of an aneurysm on a blood vessel.} \label{fig:an_sketch}
+\end{figure}
+
+% We consider the situation illustrated in Figure \ref{fig:an_sketch}, where we have a circular deformation of the blood vessel. The radius of this circle is labelled by $r$ and the width of the blood vessel is labelled by $L$. Note that $H$ is the length of the blood vessel that we will be modelling.
+
+To model the shape of the aneurysm, we will create a \textbf{mask}, or an array consisting of the values 0 and 1 only. We create both a mask for the outline of the aneurysm, which we will refer to as the \textit{mask}, and a mask containing all the lattice points within the blood vessel and aneurysm, which we will refer to as the \emph{inner mask}, as shown in Figure \ref{fig:mask}. The code for this is provided in Appendix \ref{sec:B.3}.
+
+\begin{figure}[!htb]
+    \centering
+    \begin{tabular}{p{0.45\textwidth}p{0.45\textwidth}}
+       \input{figures/aneurysm/mask}  & \input{figures/aneurysm/inner_mask}
+       % A mask of points in the shape of an aneurysm  & A mask of points in the shape of an aneurysm including the points within the blood vessel
+    \end{tabular}
+    \vspace{-5mm}
+    \caption[Masks of the aneurysm]{The \emph{mask} and \emph{inner mask} of the aneurysm - this gives the lattice points that form the outline of an aneurysm and all lattice points within the blood vessel and aneurysm.} \label{fig:mask}
+\end{figure}
+
+% To model the shape of the aneurysm, we will create a mask, or an array consisting of the values 0 and 1 only. We create both a mask for the outline of the aneurysm, which we will refer to as the \textit{mask}, and a mask containing all the lattice points within the blood vessel and aneurysm, which we will refer to as the \emph{inner mask}, as shown in Figure \ref{fig:mask}. The code for this is provided in Appendix \ref{sec:B.3}.
+\newpage
+As before, the domain has dimensions $80\times80$ and relaxation time $\tau=0.8$. To initialise, the velocity is set to zero and the density is set to 1.0 at each lattice node. The distribution function $f_k$ is also set to $f_k^{\mathrm{eq}}$ at $t=0$. As we are modelling regions of various porosities, we set
+\vspace{-1mm}
+\begin{align}
+    \varepsilon_\beta &= 
+    \begin{cases}
+        1.0 \quad & \textit{inner mask} = 1, \\
+        0.5 & \textit{inner mask} = 1 \quad \text{and} \quad y > L, \\
+        0.1 & \text{otherwise},
+    \end{cases} \\
+    \mathrm{Da} &=
+    \begin{cases}
+        10^6 & \textit{inner mask} = 1, \\
+        10^{-3} \text{ }& \textit{inner mask} = 1 \quad \text{and} \quad y > L, \\
+        10^{-6} & \text{otherwise},
+    \end{cases}
+\end{align}
+noting that the region where $y>L$ indicates the aneurysm where there is a deformation in the blood vessel. We model blood flow as a pure fluid flow and the outside region, or the region that is neither the aneurysm nor the blood vessel, as `almost solid'. Generally, we will ignore this outside region.
+
+According to section 14.2.6 of \cite{reynblood}, the Reynolds number is 500 for a typical artery and 400 for a typical vein. As such, we will take the Reynolds number to be 450 for these flows. 
+
+As there are no moving boundaries in this flow, the fluid flow is driven by a constant force, which we have to specify. We take $\mathbf{g}=(g_x,0)$ with $g_x=10^{-4}$ to avoid overflow errors but the value of this does not matter as we are more interested in the steady-state flow. 
+
+Initially, we consider the flow where the porosity within the aneurysm is 0.5, with a Darcy number $10^{-3}$. To account for the shape of the aneurysm, we employ the half-way bounce-back scheme on every lattice point where the mask is equal to 1, i.e. the outline of the aneurysm is considered to be solid. Figure \ref{fig:an_hbb} gives the implementation of this in Python.
+
+\begin{figure}[!htb]{\small
+\begin{mdframed}[backgroundcolor=red!10, linecolor=red!10]
+\begin{minted}{python}
+    for k in range(ndir):
+        for i in range(nx):
+            for j in range(ny):
+                if mask[i,j] == 1:
+                    fold[k, i, j] = f[k_[k], i, j]
+\end{minted}
+\end{mdframed}
+}
+\caption[Python implementation of the half-way bounce-back scheme on aneurysm]{Implementation of the half-way bounce-back scheme on every point in the mask equal to 1, note that {\fontfamily{cmtt}\selectfont k\_} represents $k'$ given by Table \ref{table:d2q9}.} \label{fig:an_hbb}
+\end{figure}
+\newpage
+This simulation is run until the flow is steady, that is, the difference between the velocity in the current time step and the previous time step is constant. As such, we run all the simulations in this section for 10,000 time steps or more. 
+\begin{figure}[!hbt]
+    \centering
+    \begin{tabular}{c c}
+    \input{figures/aneurysm/porous0.5}  &  \input{figures/aneurysm/porousDa3}\\
+    (i) & (ii)
+    \end{tabular}
+    % \input{figures/aneurysm/porous0.5}
+    % \input{figures/aneurysm/porousDa3}
+    \caption[Blood flow through an aneurysm with porosity $\varepsilon_\beta=0.5$ and $\mathrm{Da}=10^{-3}$]{Blood flow through an aneurysm with porosity $\varepsilon_\beta=0.5$ and $\mathrm{Da}=10^{-3}$ - (i) shows the full fluid flow through the blood vessel and aneurysm, (ii) is rescaled to show the fluid flow through the aneurysm.} \label{fig:an_0.5}
+\end{figure}
+\vspace{-5mm}
+
+Figure \ref{fig:an_0.5} shows the blood flow within an aneurysm with porosity $\varepsilon_\beta=0.5$ and $\mathrm{Da}=10^{-3}$. Figure \ref{fig:an_0.5}(i) shows the full fluid flow through the blood vessel and aneurysm. As expected, the velocity of the fluid within the blood vessel is much higher than the fluid velocity within the aneurysm. As such, we rescaled the colour bar, restricting this to $[0,0.005]$, in order to see the fluid flow within the aneurysm better, as given by Figure \ref{fig:an_0.5}(ii). Here, we can see that the boundary of the aneurysm is rigid and there is no flow through this boundary. The velocity of the fluid is highest at the opening of the aneurysm and interestingly, there is a region of lower velocity at the centre of the aneurysm, suggesting the presence of a circular flow. 
+
+We also consider the fluid flow when the flow through the aneurysm is that of a pure fluid, i.e. we take porosity within the aneurysm to be $\varepsilon_\beta=1.0$ and $\mathrm{Da}=10^{6}$, as shown in Figure \ref{fig:an_fluid}.
+
+\begin{figure}[!htb]
+    \centering
+    \begin{tabular}{c c}
+    \input{figures/aneurysm/fluid_full}  &  \input{figures/aneurysm/fluid}\\
+    (i) & (ii) 
+    \end{tabular}
+    % \input{figures/aneurysm/fluid_full}
+    % \input{figures/aneurysm/fluid}
+    \caption[Blood flow through an aneurysm as a pure fluid]{Blood flow through an aneurysm with porosity $\varepsilon_\beta=1.0$ and $\mathrm{Da}=10^{6}$ - (i) shows the full fluid flow through the blood vessel and aneurysm, (ii) is rescaled to show the fluid flow through the aneurysm.} \label{fig:an_fluid}
+\end{figure}
+
+% We also consider the fluid flow when the flow through the aneurysm is that of a pure fluid, i.e. we take porosity within the aneurysm to be $\varepsilon_\beta=1.0$ and $\mathrm{Da}=10^{6}$, as shown in Figure \ref{fig:an_fluid}.
+
+Like Figure \ref{fig:an_0.5}, Figure \ref{fig:an_fluid}(i) shows the full fluid flow through the blood vessel and aneurysm, and the colour bar has been restricted in order to see the fluid flow within the aneurysm better. As we can see, the fluid flow through this aneurysm is much higher than if it had been treated with a coil, but the direction of the flow is similar, with the velocity of the fluid being highest at the opening, and with a region of lower velocity at the centre of the aneurysm. It is also worth noting that Figure \ref{fig:an_0.5}(i) and Figure \ref{fig:an_fluid}(i) are indistinguishable, and consequently, the full fluid flows will not be shown moving forward.
+
+% As the full fluid flows are indistinguishable for different porosities and Darcy numbers, these flows will not be shown moving forward.
+
+% We now vary the Darcy numbers for constant porosity, as shown in Figure \ref{fig:an_Da}. 
+Figure \ref{fig:an_Da} shows the fluid flows when porosity is constant at $\varepsilon_\beta = 0.5$ and the Darcy number is changed, taking values from $\mathrm{Da} = 10^{-6}$ to $\mathrm{Da} = 10^{-1}$. From the figure, we can see that as the Darcy number is increased, which in turn increases the permeability of the aneurysm, it becomes easier for the fluid to flow through the aneurysm. As a result, the velocity of the blood within the aneurysm also increases.
+
+\begin{figure}[p]
+    \centering
+    \begin{tabular}{c c}
+    \input{figures/aneurysm/porousDa6}  &  \input{figures/aneurysm/porousDa5}\\
+    (i) $\mathrm{Da}=10^{-6}$ & (ii) $\mathrm{Da}=10^{-5}$ \\
+    \input{figures/aneurysm/porousDa4}  &  \input{figures/aneurysm/porousDa3}\\
+    (iii) $\mathrm{Da}=10^{-4}$ & (iv) $\mathrm{Da}=10^{-3}$ \\
+    \input{figures/aneurysm/porousDa2}  &  \input{figures/aneurysm/porousDa1}\\
+    (v) $\mathrm{Da}=10^{-2}$ & (vi) $\mathrm{Da}=10^{-1}$
+    \end{tabular}
+    % \input{figures/aneurysm/porousDa1}
+    % \input{figures/aneurysm/porousDa2}
+    % \input{figures/aneurysm/porousDa3}
+    % \input{figures/aneurysm/porousDa4}
+    % \input{figures/aneurysm/porousDa5}
+    % \input{figures/aneurysm/porousDa6}
+    \caption{Blood flow through an aneurysm with porosity $\varepsilon_\beta=0.5$ and varying Da.} \label{fig:an_Da}
+\end{figure}
+
+Figure \ref{fig:an_eps} shows the flows when the Darcy number is constant at $\mathrm{Da}=10^{-3}$ and porosity is changed, taking values from $\varepsilon_\beta=0.3$ to $\varepsilon_\beta=0.7$. From the figure, we cannot see major differences in the fluid velocities between the various values of porosity, but the direction of the flow is similar for these values of $\varepsilon_\beta$ with the velocity being highest near the opening of the aneurysm and a small region of lower velocity in the centre. 
+
+\begin{figure}[p]
+    \centering
+    \begin{tabular}{c c}
+    \input{figures/aneurysm/porous0.3}&\input{figures/aneurysm/porous0.4}\\
+    (i) $\varepsilon_\beta = 0.3$ & (ii) $\varepsilon_\beta = 0.4$ \\
+    & \\ [-2ex]
+    \multicolumn{2}{c}{\input{figures/aneurysm/porousDa3}}\\
+    \multicolumn{2}{c}{(iii) $\varepsilon_\beta = 0.5$}\\
+    & \\ [-2ex]
+    \input{figures/aneurysm/porous0.6}&\input{figures/aneurysm/porous0.7}\\
+    (iv) $\varepsilon_\beta = 0.6$ & (v) $\varepsilon_\beta = 0.7$
+    \end{tabular}
+    
+    % \input{figures/aneurysm/porous0.3}
+    % \input{figures/aneurysm/porous0.4}
+    % \input{figures/aneurysm/porousDa3}
+    % \input{figures/aneurysm/porous0.6}
+    % \input{figures/aneurysm/porous0.7}
+    % % \input{figures/aneurysm/porous0.75}
+    \caption{Blood flow through an aneurysm with $\mathrm{Da}=10^{-3}$ and varying porosity.} \label{fig:an_eps}
+\end{figure}
+
+Comparing Figures \ref{fig:an_Da} and \ref{fig:an_eps}, we can see that reducing the permeability is more important than reducing the porosity of the porous medium in the treatment of an aneurysm. From the definition of $\varepsilon_\beta$ given by (\ref{eq:2.3}), a higher porosity suggests there is a larger volume of the fluid within the aneurysm, which implies that the fluid velocity should also increase. However, from Figure \ref{fig:an_eps}, we can see that at constant Darcy number, this is not the case. 
+
+By definition, the permeability of a porous medium is the ease through which a fluid can flow and at constant Darcy number with various porosities, the ability of the fluid to flow through the medium is unchanged, resulting in similar flows in the aneurysm despite the fact that there is a larger volume of fluid. On the other hand, if we hold the porosity constant, i.e. if the ratio of the fluid volume to the total volume of the porous medium is constant, and we vary the permeability, there is a larger difference in the fluid velocities within the aneurysm at a higher Darcy number than a lower Darcy number. 
+
+% \newpage
+% \subsection*{Limitations of the model used}
+% % \todo[inline, color=red!20]{talk about limitations of model here?}
+
+
+%--------------------------------------------------------------------------------------
+%	DISCUSSION AND SUMMARY
+%--------------------------------------------------------------------------------------
+
+\chapter{Conclusion}
+% In the course of this report, we have studied fluid flows through porous media by going to a macroscopic viewpoint using the volume-averaging method in Chapter \ref{chap:2}, where we average the microscopic fluid equations over an REV instead of considering the motion of the individual fluid particles. We also introduce a closure model to simulate the effect of the drag force from the porous medium. 
+
+% To simulate the fluid flow numerically, we studied the lattice Boltzmann method in Chapter \ref{chap:3}, both for a pure fluid, and a fluid in a porous medium. The implementation of the boundary conditions is discussed and the drag force discussed in Chapter \ref{chap:2} is modelled numerically. 
+
+% The code and method was validated in Chapter \ref{chap:4} by applying it to porous Poiseuille flow driven by a constant force, and porous Couette flow between two parallel plates. This was then compared to results in the literature, which we have a good agreement with, and thus our code is valid.
+
+% We modelled the blood flow in an aneurysm in Chapter \ref{chap:5}, taking blood to be a Newtonian fluid, and assuming the structure of the aneurysm to be rigid. The porosity and permeability of the aneurysm is varied and we find that reducing the permeability of the aneurysm reduces the fluid velocity within the aneurysm more than reducing the porosity of the aneurysm. 
+
+
+% The numerical simulation of the blood flow through an aneurysm is modelled, taking blood to be a Newtonian fluid, and the structure of the aneurysm to be rigid. 
+
+Let us conclude this report with a summary of the key concepts introduced:
+\begin{itemize}
+    \item The study of fluid flows through porous media is a topic of interest in many fields of science and engineering, including the biomedical industry. Porous media have three characteristic length scales that can be used to describe the medium; although it is possible to describe fluid flows through porous media microscopically, it is more useful to consider the macroscopic flows. 
+    \item The volume averaging method averages the governing fluid equations over a representative elementary volume, allowing us to go from a microscopic viewpoint to a macroscopic viewpoint. This gives us the macroscopic fluid equations, which allow us to study the motion of the entire fluid within a representative elementary volume instead of the motion of individual fluid particles. We also use a closure model to simulate the effect of the drag force from the porous medium. 
+    %with the macroscopic momentum equation needing a closure model, provided by \todo[color=blue!20]{rewrite this bit, maybe add the equations?}
+    \item The lattice Boltzmann method is a numerical method used to simulate fluid flow based on the Boltzmann equation, making it more attractive for modelling the fluid flow through porous media compared to other conventional computational fluid dynamics methods. It is a linear method, with any non-linearity being local. 
+    \begin{itemize}
+        \item[{\fontfamily{cmtt}\selectfont{o}}] Fluid motion is governed by the lattice Boltzmann equation, which remains the same for pure fluid flow and fluid flow in a porous medium. The differences lie in the definition of the equilibrium distribution function, and the introduction of the force term. 
+        \item[{\fontfamily{cmtt}\selectfont{o}}] The boundary conditions on the macroscopic variables $\rho$ and $\mathbf{u}$ are applied to the distribution functions, resulting in a number of boundary schemes that can be used to implement the boundary conditions. Most notably, the half-way bounce-back method can be used to implement homogeneous Dirichlet boundary conditions, and Zou \& He boundary conditions can be used to implement non-homogeneous Dirichlet boundary conditions.
+    \end{itemize}
+    \item The code and method is validated by applying it to porous Poiseuille flow driven by a constant force, and porous Couette flow between two parallel plates. This is then compared to results in the literature, which we have a good agreement with, and thus our code is valid.
+    \item The numerical simulation of the blood flow through an aneurysm is modelled, taking blood to be a Newtonian fluid, and assuming the structure of the aneurysm to be rigid. The porosity and permeability of the aneurysm is varied and we find that reducing the permeability of the aneurysm results in a larger reduction in the fluid velocity within the aneurysm. 
+\end{itemize}
+\section{Further Study}
+The project can be extended further in a number of ways:
+\begin{itemize}
+    \item The geometry of the aneurysm could be modified to account for various different shapes, such as aneurysms in a y-shaped junction, or non-circular saccular aneurysms. 
+    \item As we are studying blood flow, we could also consider the pulsatile nature of blood flow by modifying the boundary conditions at the inlet \cite{artoli2002}.
+    \item We could consider blood to be a non-Newtonian fluid through a number of models, such as the power-law model used in \cite{AFROUZI2020}, or using the so-called Casson's Rheology model studied by Ouared \& Chopard in \cite{ouared+chopard}.
+    \item The formation of a blood clot could also be considered. The purpose of treating such aneurysms is to reduce the blood flow within the aneurysm allowing it to clot, and as such, it is a relevant topic, with a model proposed in \cite{ouared+chopard} and having been implemented in various studies such as \cite{thrombosislb}.
+\end{itemize}
+
+%\chapter*{Appendices}
+%\addcontentsline{toc}{chapter}{Appendices}
+
+%--------------------------------------------------------------------------------------
+%	APPENDIX
+%--------------------------------------------------------------------------------------
+
+\appendix
+\chapter{Derivation of Zou \& He Boundary Conditions on the Top, Left and Right Walls} \label{appendix:a}
+\pagenumbering{alph}
+\begin{subequations}
+The equations used to calculate the mass and momentum density are shown below:
+\begin{align}
+    \rho(\mathbf{x},t) = \sum_k f_k(\mathbf{x},t) \implies &\rho = f_0 + f_1 + f_2 + f_3 + f_4 + f_5 + f_6 + f_7 + f_8, \label{eq:A.1}\\
+    \rho u_x(\mathbf{x},t) = \sum_k \mathbf{c}_{k,x} f_k(\mathbf{x},t) \implies &\rho u_{x} = f_1 - f_2 + f_5 - f_6 - f_7 + f_8, \label{eq:A.2}\\
+    \rho u_y(\mathbf{x},t) = \sum_k \mathbf{c}_{k,y} f_k(\mathbf{x},t) \implies &\rho u_{y} = f_3 - f_4 + f_5 + f_6 - f_7 - f_8. \label{eq:A.3}
+\end{align}
+\end{subequations}
+We can use the subscripts N, W, E to denote the top, left and right boundary walls respectively. As with the derivation for the bottom wall, we need a 4th equation to close the system, given by enforcing the bounce-back rule on the non-equilibrium part normal to the boundary. For the top wall, we have
+\begin{subequations}
+\begin{equation}
+    f_3 - f_3^{\mathrm{eq}} = f_4 - f_4^{\mathrm{eq}}, \label{eq:A.4a}
+\end{equation}
+and for the bottom wall, we have
+\begin{equation}
+    f_1 - f_1^{\mathrm{eq}} = f_2 - f_2^{\mathrm{eq}}. \label{eq:A.4b}
+\end{equation}
+\end{subequations}
+Using (\ref{eq:3.12}), we can write
+\begin{subequations}
+\begin{align}
+    f_1^{\mathrm{eq}} &= \frac{1}{9}\rho \left( 1 + \frac{u_{x}}{c_s^2} + \frac{u_{x}^2}{2c_s^4} - \frac{u_{x}^2 + u_{y}^2}{2c_s^2} \right) \label{eq:A.5a}\\
+    f_2^{\mathrm{eq}} &= \frac{1}{9}\rho \left( 1 - \frac{u_{x}}{c_s^2} + \frac{u_{x}^2}{2c_s^4} - \frac{u_{x}^2 + u_{y}^2}{2c_s^2} \right) \label{eq:A.5b}\\
+    f_3^{\mathrm{eq}} &= \frac{1}{9}\rho \left( 1 + \frac{u_{y}}{c_s^2} + \frac{u_{y}^2}{2c_s^4} - \frac{u_{x}^2 + u_{y}^2}{2c_s^2} \right) \label{eq:A.5c}\\
+    f_4^{\mathrm{eq}} &= \frac{1}{9}\rho \left( 1 - \frac{u_{y}}{c_s^2} + \frac{u_{y}^2}{2c_s^4} - \frac{u_{x}^2 + u_{y}^2}{2c_s^2} \right).\label{eq:A.5d}
+\end{align}
+\end{subequations}
+
+\section{Top Boundary}
+Substituting (\ref{eq:A.5c}) and (\ref{eq:A.5d}) into (\ref{eq:A.4a}), and rearranging, we get
+\begin{subequations}
+\begin{align}
+    f_4 &= f_3 - \frac{1}{9}\rho_\mathrm{N}\left(\frac{2u_{\mathrm{N},y}}{c_s^2}\right) \nonumber \\
+    &= f_3 - \frac{2}{3}\rho_\mathrm{N}u_{\mathrm{N},y}. \label{eq:A.6a}
+\end{align} 
+Adding (\ref{eq:A.1}) and (\ref{eq:A.3}), we can find the density:
+\begin{align}
+    \rho_\mathrm{N} + \rho_\mathrm{N}u_{\mathrm{N},y} &= \left[ f_0 + f_1 + f_2 + 2(f_3 + f_5 + f_6)\right], \nonumber \\
+    \implies \rho_\mathrm{N} &= \frac{1}{1+u_{\mathrm{N},y}} \left[ f_0 + f_1 + f_2 + 2(f_3 + f_5 + f_6)\right].
+\end{align}
+Finally, adding and subtracting (\ref{eq:A.2}) and (\ref{eq:A.3}), as well as using (\ref{eq:A.6a}) gives
+\begin{align}
+    \rho_\mathrm{N}u_{\mathrm{N},x} + \rho_\mathrm{N}u_{\mathrm{N},y} &= f_1 - f_2 + f_3 - f_4 + 2f_5 - 2f_7, \nonumber \\
+    &= f_1 - f_2 + \frac{2}{3}\rho_\mathrm{N}u_{\mathrm{N},y} + 2f_5 - 2f_7, \nonumber \\
+    \implies f_7 &= f_5 + \frac{1}{2}(f_1-f_2) - \frac{1}{2}\rho_\mathrm{N}u_{\mathrm{N},x} + \frac{1}{6}\rho_\mathrm{N}u_{\mathrm{N},y}, \\
+    \rho_\mathrm{N}u_{\mathrm{N},y} - \rho_\mathrm{N}u_{\mathrm{N},x} &= - f_1 + f_2 + f_3 - f_4 + 2f_6 - 2f_8, \nonumber \\
+    &= - f_1 + f_2 + \frac{2}{3}\rho_\mathrm{N}u_{\mathrm{N},y} + 2f_6 - 2f_8, \nonumber \\
+    \implies f_8 &= f_6 - \frac{1}{2}(f_1-f_2) + \frac{1}{2}\rho_\mathrm{N}u_{\mathrm{N},x} - \frac{1}{6}\rho_\mathrm{N}u_{\mathrm{N},y}.
+\end{align}
+\end{subequations}
+
+\section{Left Boundary}
+Substituting (\ref{eq:A.5a}) and (\ref{eq:A.5b}) into (\ref{eq:A.4b}), and rearranging, we get
+\begin{subequations}
+\begin{align}
+    f_1 &= f_2 + \frac{1}{9}\rho_\mathrm{W}\left(\frac{2u_{\mathrm{W},x}}{c_s^2}\right), \nonumber \\
+    &= f_2 + \frac{2}{3}\rho_\mathrm{W}u_{\mathrm{W},x}. \label{eq:A.7a}
+\end{align}
+Subtracting (\ref{eq:A.2}) from (\ref{eq:A.1}), we can find the density:
+\begin{align}
+    \rho_\mathrm{W} - \rho_\mathrm{W}u_{\mathrm{W},x} &= \left[ f_0 + f_3 + f_4 + 2(f_2 + f_6 + f_7)\right], \nonumber \\
+    \implies \rho_\mathrm{W} &= \frac{1}{1-u_{\mathrm{W},x}} \left[ f_0 + f_3 + f_4 + 2(f_2 + f_6 + f_7)\right].
+\end{align}
+Finally, adding and subtracting (\ref{eq:A.2}) and (\ref{eq:A.3}), as well as using (\ref{eq:A.7a}) gives
+\begin{align}
+    \rho_\mathrm{W}u_{\mathrm{W},x} + \rho_\mathrm{W}u_{\mathrm{W},y} &= f_1 - f_2 + f_3 - f_4 + 2f_5 - 2f_7, \nonumber \\
+    &= \frac{2}{3}\rho_\mathrm{W}u_{\mathrm{W},x} + f_3 - f_4 + 2f_5 - 2f_7, \nonumber \\
+    \implies f_5 &= f_7 - \frac{1}{2}(f_3-f_4) + \frac{1}{6}\rho_\mathrm{W}u_{\mathrm{W},x} + \frac{1}{2}\rho_\mathrm{W}u_{\mathrm{W},y}, \\
+    \rho_\mathrm{W}u_{\mathrm{W},y} - \rho_\mathrm{W}u_{\mathrm{W},x} &= - f_1 + f_2 + f_3 - f_4 + 2f_6 - 2f_8, \nonumber \\
+    &= -\frac{2}{3}\rho_\mathrm{W}u_{\mathrm{W},x} + f_3 - f_4 + 2f_6 - 2f_8, \nonumber \\
+    \implies f_8 &= f_6 + \frac{1}{2}(f_3-f_4) + \frac{1}{6}\rho_\mathrm{W}u_{\mathrm{W},x} - \frac{1}{2}\rho_\mathrm{W}u_{\mathrm{W},y}.
+\end{align}
+\end{subequations}
+\section{Right Boundary}
+Substituting (\ref{eq:A.5a}) and (\ref{eq:A.5b}) into (\ref{eq:A.4b}), and rearranging, we get
+\begin{subequations}
+\begin{align}
+    f_2 &= f_1 - \frac{1}{9}\rho_\mathrm{E}\left(\frac{2u_{\mathrm{E},x}}{c_s^2}\right), \nonumber \\
+    &= f_1 - \frac{2}{3}\rho_\mathrm{E}u_{\mathrm{E},x}. \label{eq:A.8a}
+\end{align}
+Adding (\ref{eq:A.1}) and (\ref{eq:A.2}), we can find the density:
+\begin{align}
+    \rho_\mathrm{E} + \rho_\mathrm{E}u_{\mathrm{E},x} &= \left[ f_0 + f_3 + f_4 + 2(f_1 + f_5 + f_8)\right] \nonumber \\
+    \implies \rho_\mathrm{E} &= \frac{1}{1+u_{\mathrm{E},x}} \left[ f_0 + f_3 + f_4 + 2(f_1 + f_5 + f_8)\right].
+\end{align}
+Finally, adding and subtracting (\ref{eq:A.2}) and (\ref{eq:A.3}), as well as using (\ref{eq:A.8a}) gives
+\begin{align}
+    \rho_\mathrm{E}u_{\mathrm{E},y} - \rho_\mathrm{E}u_{\mathrm{E},x} &= - f_1 + f_2 + f_3 - f_4 + 2f_6 - 2f_8, \nonumber \\
+    &= -\frac{2}{3}\rho_\mathrm{E}u_{\mathrm{E},x} + f_3 - f_4 + 2f_6 - 2f_8, \nonumber \\
+    \implies f_6 &= f_8 - \frac{1}{2}(f_3-f_4) - \frac{1}{6}\rho_\mathrm{E}u_{\mathrm{E},x} + \frac{1}{2}\rho_\mathrm{E}u_{\mathrm{E},y} \\
+    \rho_\mathrm{E}u_{\mathrm{E},x} + \rho_\mathrm{E}u_{\mathrm{E},y} &= f_1 - f_2 + f_3 - f_4 + 2f_5 - 2f_7, \nonumber \\
+    &= \frac{2}{3}\rho_\mathrm{E}u_{\mathrm{E},x} + f_3 - f_4 + 2f_5 - 2f_7, \nonumber \\
+    \implies f_7 &= f_5 + \frac{1}{2}(f_3-f_4) - \frac{1}{6}\rho_\mathrm{E}u_{\mathrm{E},x} + \frac{1}{2}\rho_\mathrm{E}u_{\mathrm{E},y}.
+\end{align}
+\end{subequations}
+
+\chapter{Python code for numerical simulations}
+\section{Poiseuille Flow in a Porous Medium} \label{sec:B.1}
+{\footnotesize
+\input{code/poiseuille}
+}
+\section{Couette Flow in a system with different porosities} \label{sec:B.2}
+{\footnotesize
+\input{code/couette}
+}
+\section{Flow through aneurysm} \label{sec:B.3}
+{\footnotesize
+\input{code/aneurysm}
+}
+
+% \setlength{\parskip}{3pt}
+% \begin{spacing}{1.5}
+% \nocite{*} % shows bibliography without citing
+\DeclareNameAlias{author}{family-given}
+\printbibliography[
+heading=bibintoc,
+title={Bibliography}
+]
+% \end{spacing}
+\end{document}

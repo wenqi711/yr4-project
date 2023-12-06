@@ -1,0 +1,24 @@
+\begin{tikzpicture}[thick,scale=1, every node/.style={scale=1}, >={Latex[length=3mm, width=2mm]}]
+    \draw[gray, dashed, thin] (0, 0) rectangle (4,4);
+    \node at (-0.3, -0.3) {$\mathbf{c}_7$};
+    \node at (-0.35, 2) {$\mathbf{c}_2$};
+    \node at (-0.3, 4.3) {$\mathbf{c}_6$};
+    \node at (2, -0.3) {$\mathbf{c}_4$};
+    \node at (2.6, 2.2) {$\mathbf{c}_0$};
+    \node at (2, 4.3) {$\mathbf{c}_3$};
+    \node at (4.3, -0.3) {$\mathbf{c}_8$};
+    \node at (4.35, 2) {$\mathbf{c}_1$};
+    \node at (4.3, 4.3) {$\mathbf{c}_5$};
+    \foreach \n in {0, 1, 2}
+    \foreach \m in {0, 1, 2}{
+    \filldraw[black] (2*\n, 2*\m) circle (2pt);
+    }
+    \draw[black, ->, thin] (2, 2) -- (0, 0);
+    \draw[black, ->, thin] (2, 2) -- (0, 2);
+    \draw[black, ->, thin] (2, 2) -- (0, 4);
+    \draw[black, ->, thin] (2, 2) -- (2, 0);
+    \draw[black, ->, thin] (2, 2) -- (2, 4);
+    \draw[black, ->, thin] (2, 2) -- (4, 0);
+    \draw[black, ->, thin] (2, 2) -- (4, 2);
+    \draw[black, ->, thin] (2, 2) -- (4, 4);
+\end{tikzpicture}
